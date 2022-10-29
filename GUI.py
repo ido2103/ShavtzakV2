@@ -64,7 +64,6 @@ class Table(QTableWidget):
         # every time you edit a section of the qtable it auto-saves.
         self.itemChanged.connect(self.updateJson)
 
-
     def updateJson(self):
         # this function gets called every time the qtable gets edited.
         list = []
