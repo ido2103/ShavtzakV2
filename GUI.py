@@ -135,4 +135,4 @@ class Table(QTableWidget):
         # updating the data to not include the dict in the removed row and updating the file to not include it.
         self.data.remove(d)
         self.updateJson()
-        print("Removed row {0}".format(num[0]))
+        print(f"Removed row {num[0]}")
