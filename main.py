@@ -1,8 +1,11 @@
+import pstats
+
 from GUI import Window
 import sys
 import json
-from funcs import doMitbah, doShmira, doHamal
+from funcs import doMitbah, doShmira, doHamal, doSiur, printAllFuncs
 from PyQt5.QtWidgets import *
+import cProfile
 
 
 def app():
@@ -21,10 +24,12 @@ with open("soldiers.json", "r") as f:
                 except ValueError as exc:
                     pass
 
+with cProfile.Profile() as pr:
+    for i in range(10000):
+        printAllFuncs(data)
 
-print(doMitbah(data)[0])
-print(doShmira(data, "Tapuz:"))
-print(doShmira(data, "S.G:"))
-print(doHamal(data))
-# TODO ADD SIUR
+stats = pstats.Stats(pr)
+stats.sort_stats(pstats.SortKey.TIME)
+stats.print_stats()
+
 app()
