@@ -32,7 +32,6 @@ def highest(data, string):
 
 
 def doMitbah(data):
-    # TODO: UPDATE THE DATA
     # selects 2 soldiers to go to the kitchen.
     chosen = []
     options = []
@@ -47,9 +46,9 @@ def doMitbah(data):
             for n in range(i["Mitbah:"], highestMit):
                 options.append(i)
     # select 2 random soldiers out of the list
-    while len(options) < 2:
+    while len(chosen) < 2:
         a = random.choice(options)
-        if a not in options: options.append(a)
+        if a not in chosen: chosen.append(a)
     return chosen, data
 
 
@@ -62,7 +61,7 @@ def doShmira(data, type):
             # with the highest mitbah value the more likely it is to pick them.
             for n in range(i[type], highestShmira):
                 options.append(i)
-    return (random.choice(options)["Name:"], type)
+    return random.choice(options), data
 
 
 def doHamal(data):
@@ -72,7 +71,7 @@ def doHamal(data):
         if (i["Resting Hours:"] <= 0) and (i["Hamal:"] <= highestHamal) and (i["IsHamal"] == "True"):
             for n in range(i["Hamal:"], highestHamal):
                 options.append(i)
-    return (random.choice(options)["Name:"], "Hamal")
+    return random.choice(options), data
 
 
 def doSiur(data, amountOfSoldiers):
@@ -90,19 +89,23 @@ def doSiur(data, amountOfSoldiers):
             case 1:
                 if (i["Siur:"] <= highest1) and (i["Resting Hours:"] <= 0):
                     for n in range(i["Siur:"], highest1):
-                        div1.append(i["Name:"])
+                        div1.append(i)
+                pass
             case 2:
                 if (i["Siur:"] <= highest2) and (i["Resting Hours:"] <= 0):
                     for n in range(i["Siur:"], highest2):
-                        div2.append(i["Name:"])
+                        div2.append(i)
+                pass
             case 3:
                 if (i["Siur:"] <= highest3) and (i["Resting Hours:"] <= 0):
                     for n in range(i["Siur:"], highest3):
-                        div3.append(i["Name:"])
+                        div3.append(i)
+                pass
             case 4:
                 if (i["Siur:"] <= highest4) and (i["Resting Hours:"] <= 0):
                     for n in range(i["Siur:"], highest4):
-                        div4.append(i["Name:"])
+                        div4.append(i)
+                pass
             case _:
                 pass
     match amountOfSoldiers:
@@ -142,7 +145,9 @@ def doSiur(data, amountOfSoldiers):
             raise ValueError
     soldiers = [div1, div2, div3, div4]
     a = random.choice(soldiers)
-    return (a, "Siur")
+    if amountOfSoldiers == 1:
+        return [a], data
+    return a, data
 
 
 def printAllFuncs(data):
@@ -151,5 +156,49 @@ def printAllFuncs(data):
     doShmira(data, "Tapuz:")
     doShmira(data, "S.G:")
     doSiur(data, 2)
+
+
+def cycle(data, amountOfSoldiers, amountOfSiurim, debug):
+    soldiers = []
+    # First thing's first, doing the mitbah and giving them a 24 hour break from doing missions.
+    for i in data:
+        if i["Mitbah Cooldown:"] > 0:
+            i["Mitbah Cooldown:"] -= 1
+    mitbah, data = doMitbah(data)
+    for i in mitbah:
+        i["Mitbah:"] += 1
+        i["Mitbah Cooldown:"] = 2
+        i["Resting Hours:"] = 24
+    # then, we need to do the hamal.
+    hamal, data = doHamal(data)
+    hamal["Hamal:"] += 1
+    hamal["Resting Hours:"] = 16
+    # then, siur.
+    siur, data = doSiur(data, amountOfSoldiers)
+    for i in siur:
+        i["Siur:"] += 1
+        i["Resting Hours:"] = 16
+    # finally, smirot.
+    tapuz, data = doShmira(data, "Tapuz:")
+    tapuz["Tapuz:"] += 1
+    tapuz["Resting Hours:"] = 12
+    sg, data = doShmira(data, "S.G:")
+    sg["S.G:"] += 1
+    sg["Resting Hours:"] = 12
+    # lastly, resave the database with our brand new edited data.
+    for i in mitbah:
+        soldiers.append(i)
+    soldiers.append(hamal)
+    for i in siur:
+        soldiers.append(i)
+    soldiers.append(tapuz)
+    soldiers.append(sg)
+    for i in soldiers:
+        i["Resting Hours:"] -= 4
+
+    with open("soldiers.json", "w") as f:
+        f.seek(0)
+        json.dump(data, f, indent=6)
+    return soldiers
 
 
