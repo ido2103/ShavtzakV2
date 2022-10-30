@@ -26,7 +26,7 @@ with open("soldiers.json", "r") as f:
 
 with cProfile.Profile() as pr:
     for i in range(10000):
-        printAllFuncs(data)
+        print(cycle(data, 2, 2, debug=True))
 
 stats = pstats.Stats(pr)
 stats.sort_stats(pstats.SortKey.TIME)
