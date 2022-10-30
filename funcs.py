@@ -116,7 +116,7 @@ def doSiur(data, amountOfSoldiers):
             if div3: div3 = random.choice(div3)
             if div4: div4 = random.choice(div4)
 
-        case 2:
+        case 2: # ADD: IF THEY LITERALLY DON'T HAVE ENOUGH PEOPLE FOR A SIUR THE WHILE LOOP'S STUCK INDEFINETLY.
             if div1:
                 temp = [random.choice(div1)]
                 while len(temp) < 2:
