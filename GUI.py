@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5 import QtWidgets
+from PyQt5.QtGui import QIntValidator, QValidator
 from funcs import append_json
 import json
 
@@ -34,6 +35,16 @@ class Window(QWidget):
         self.buttonRemove.clicked.connect(self.table1.removeaRow)
         self.tab2.layout.addWidget(self.buttonRemove)
 
+        self.buttonSave = QPushButton(self)
+        self.buttonSave.setText("Save")
+        self.buttonSave.clicked.connect(self.table1.updateJson)
+        self.tab2.layout.addWidget(self.buttonSave)
+
+        self.buttonResetClmn = QPushButton(self)
+        self.buttonResetClmn.setText("Reset Column")
+        self.buttonResetClmn.clicked.connect(self.table1.removeclmn)
+        self.tab2.layout.addWidget(self.buttonResetClmn)
+
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
 
@@ -61,11 +72,11 @@ class Table(QTableWidget):
         for r, dictionary in enumerate(self.data):
             for c, key in enumerate(dictionary):
                 self.setItem(r, c, QtWidgets.QTableWidgetItem(str(dictionary[key])))
-        # every time you edit a section of the qtable it auto-saves.
-        self.itemChanged.connect(self.updateJson)
+
 
     def updateJson(self):
-        # this function gets called every time the qtable gets edited.
+        # whenever you call this function it saves the qtable in the json. it also gets
+        # auto-called during things such as removing a row, adding a row, etc.
         list = []
         print("Updating...")
         # these 2 for's make a list to  be saved as the new json file.
@@ -136,3 +147,38 @@ class Table(QTableWidget):
         self.data.remove(d)
         self.updateJson()
         print(f"Removed row {num[0]}")
+
+    def removeclmn(self):
+        num = QtWidgets.QInputDialog.getInt(QtWidgets.QWidget(), "Reset Column", "Which column do you want to reset?")
+        if num[1]:
+            if num[0] > 0:
+                print(num)
+                match num[0]:
+                    case 1:
+                        for i in self.data:
+                            i["S.G:"] = 0
+                    case 2:
+                        for i in self.data:
+                            i["Tapuz:"] = 0
+                    case 3:
+                        for i in self.data:
+                            i["Hamal:"] = 0
+                    case 4:
+                        for i in self.data:
+                            i["Siur:"] = 0
+                    case 5:
+                        for i in self.data:
+                            i["Mitbah:"] = 0
+                    case 6:
+                        for i in self.data:
+                            i["Resting Hours:"] = 0
+                    case 7:
+                        for i in self.data:
+                            i["Mitbah Cooldown:"] = 0
+                    case _:
+                        return
+                for r, dictionary in enumerate(self.data):
+                    for c, key in enumerate(dictionary):
+                        self.setItem(r, c, QtWidgets.QTableWidgetItem(str(dictionary[key])))
+        else:
+            return
