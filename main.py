@@ -13,6 +13,15 @@ def app():
     screen.show()
     sys.exit(app.exec_())
 
+# TODO LIST
+"""
+RETURN SCORE
+SEVEV MP
+TRANSLATE UI
+GIMELIM
+UPGRADE UI
+--KAF KAF A--
+"""
 
 with open("soldiers.json", "r") as f:
         data = json.load(f)
@@ -22,5 +31,5 @@ with open("soldiers.json", "r") as f:
                     i[n] = int(i[n])
                 except ValueError as exc:
                     pass
-computeList(data, 2, 3, debug=False)
+#computeList(data, 1, 2, 1, False)
 app()
