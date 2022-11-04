@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QIntValidator, QValidator
-from funcs import append_json
+from funcs import append_json, computeList
 import json
 
 
@@ -18,6 +17,16 @@ class Window(QWidget):
 
         self.tabs.addTab(self.tab1, "Main")
         self.tabs.addTab(self.tab2, "Soldiers")
+        # setting up tab 1 (used for general control)
+        self.tab1.layout = QVBoxLayout(self)
+        self.tab1.setLayout(self.tab1.layout)
+
+        with open("soldiers.json", "r") as f:
+            data = json.load(f)
+        self.makeShavtzak = QPushButton(self)
+        self.makeShavtzak.setText("Make Shavtzak")
+        self.makeShavtzak.clicked.connect(lambda: self.shavtzak(1, 2, 1, False))
+        self.tab1.layout.addWidget(self.makeShavtzak)
 
         # Setting up tab 2 (used for the list)
         self.tab2.layout = QVBoxLayout(self)
@@ -47,6 +56,20 @@ class Window(QWidget):
 
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
+    def shavtzak(self, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug):
+        with open("soldiers.json", "r") as f:
+            data = json.load(f)
+            for i in data:
+                for n in i:
+                    try:
+                        i[n] = int(i[n])
+                    except ValueError as exc:
+                        pass
+        try:
+            computeList(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug)
+            self.table1.processDict(data)
+        except Exception as exc:
+            print(exc)
 
 
 class Table(QTableWidget):
@@ -57,6 +80,7 @@ class Table(QTableWidget):
         self.keys = ["Name:", "S.G:", "Tapuz:", "Hamal:",
                 "Siur:",
                 "Mitbah:",
+                "Kaf Kaf A:",
                 "Resting Hours:",
                 "Mitbah Cooldown:",
                 "IsHamal",
@@ -73,7 +97,6 @@ class Table(QTableWidget):
             for c, key in enumerate(dictionary):
                 self.setItem(r, c, QtWidgets.QTableWidgetItem(str(dictionary[key])))
 
-
     def updateJson(self):
         # whenever you call this function it saves the qtable in the json. it also gets
         # auto-called during things such as removing a row, adding a row, etc.
@@ -84,6 +107,7 @@ class Table(QTableWidget):
             temp_dict = {"Name:": "", "S.G:": 0, "Tapuz:": 0, "Hamal:": 0,
                          "Siur:": 0,
                          "Mitbah:": 0,
+                         "Kaf Kaf A:": 0,
                          "Resting Hours:": 0,
                          "Mitbah Cooldown:": 0,
                          "IsHamal": 0,
@@ -108,10 +132,11 @@ class Table(QTableWidget):
         # this function adds a new row to be edited from a template.
         print("addRow clicked.")
         # updating self.data to include the new row and updating the json
-        self.data = append_json("Insert Name", 0, 0, 0, 0, 0, 0, 0, False, False, False, False, 0)
+        self.data = append_json("Insert Name", 0, 0, 0, 0, 0, 0, 0, 0, False, False, False, False, 0)
         self.insertRow(self.rowCount())
         # the dict that goes in the actual qtable (not in the file and program)
         temp_dict = {"Name:": "Insert Name", "S.G:": "0", "Tapuz:": "0", "Hamal:": "0", "Siur:": "0", "Mitbah:": "0",
+                     "KafKaf A:": "0",
                      "Resting Hours:": "0",
                      "Mitbah Cooldown:": "0",
                      "IsHamal": "False",
@@ -148,7 +173,7 @@ class Table(QTableWidget):
         self.updateJson()
         print(f"Removed row {num[0]}")
 
-    def removeclmn(self):
+    def removeclmn(self): # rewrite using QComboBox
         num = QtWidgets.QInputDialog.getInt(QtWidgets.QWidget(), "Reset Column", "Which column do you want to reset?")
         if num[1]:
             if num[0] > 0:
@@ -171,8 +196,11 @@ class Table(QTableWidget):
                             i["Mitbah:"] = 0
                     case 6:
                         for i in self.data:
-                            i["Resting Hours:"] = 0
+                            i["Kaf Kaf A:"] = 0
                     case 7:
+                        for i in self.data:
+                            i["Resting Hours:"] = 0
+                    case 8:
                         for i in self.data:
                             i["Mitbah Cooldown:"] = 0
                     case _:
@@ -182,3 +210,8 @@ class Table(QTableWidget):
                         self.setItem(r, c, QtWidgets.QTableWidgetItem(str(dictionary[key])))
         else:
             return
+
+    def processDict(self, data):
+        for r, dictionary in enumerate(data):
+            for c, key in enumerate(dictionary):
+                self.setItem(r, c, QtWidgets.QTableWidgetItem(str(dictionary[key])))
