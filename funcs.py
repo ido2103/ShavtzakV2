@@ -3,8 +3,10 @@ import random
 import copy
 
 
-def append_json(name: str, sg, tapuz, hamal, siur, mitbah, restingHours, mitbahCD, isHamal, isPtorMitbah, isPtorShmira, isSevevMp, division):
-    temp_dict = {"Name:": name, "S.G:": sg, "Tapuz:": tapuz, "Hamal:": hamal, "Siur:": siur, "Mitbah:": mitbah,  "Resting Hours:": restingHours,
+def append_json(name: str, sg, tapuz, hamal, siur, kka, mitbah, restingHours, mitbahCD, isHamal, isPtorMitbah, isPtorShmira, isSevevMp, division):
+    temp_dict = {"Name:": name, "S.G:": sg, "Tapuz:": tapuz, "Hamal:": hamal, "Siur:": siur, "Mitbah:": mitbah,
+            "Kaf Kaf A:": kka,
+            "Resting Hours:": restingHours,
             "Mitbah Cooldown:": mitbahCD,
             "IsHamal": isHamal,
             "IsPtorMitbah": isPtorMitbah,
@@ -122,7 +124,7 @@ def doSiur(data, amountOfSoldiers):
             if div1:
                 temp = [random.choice(div1)]
                 count = 0
-                while len(temp) < 2 and count < 10:
+                while len(temp) < amountOfSoldiers and count < 10:
                     a = random.choice(div1)
                     if a not in temp: temp.append(a)
                     count += 1
@@ -131,7 +133,7 @@ def doSiur(data, amountOfSoldiers):
             if div2:
                 temp = [random.choice(div2)]
                 count = 0
-                while len(temp) < 2 and count < 10:
+                while len(temp) < amountOfSoldiers and count < 10:
                     a = random.choice(div2)
                     if a not in temp: temp.append(a)
                     count += 1
@@ -139,7 +141,7 @@ def doSiur(data, amountOfSoldiers):
             if div3:
                 temp = [random.choice(div3)]
                 count = 0
-                while len(temp) < 2:
+                while len(temp) < amountOfSoldiers and count < 10:
                     a = random.choice(div3)
                     if a not in temp: temp.append(a)
                     count += 1
@@ -147,14 +149,18 @@ def doSiur(data, amountOfSoldiers):
             if div4:
                 temp = [random.choice(div4)]
                 count = 0
-                while len(temp) < 2:
+                while len(temp) < amountOfSoldiers:
                     a = random.choice(div3)
                     if a not in temp: temp.append(a)
                     count += 1
                 div4 = temp
         case _:
             raise ValueError
-    soldiers = [div1, div2, div3, div4]
+    soldiers = []
+    soldiers.append(div1)
+    soldiers.append(div2)
+    soldiers.append(div3)
+    soldiers.append(div4)
     for i in soldiers:
         if not i:
             soldiers.remove(i)
@@ -164,14 +170,77 @@ def doSiur(data, amountOfSoldiers):
     return a, data
 
 
-def cycle(data, amountOfSoldiers, amountOfSiurim, debug, num):
+def KafKafA(data, amountOfKKA):
+    divisions = seperate_to_divisions(data)
+    div1, div2, div3, div4 = [], [], [], []
+    highest1 = highest(divisions[0], "Kaf Kaf A:")
+    highest2 = highest(divisions[1],"Kaf Kaf A:")
+    highest3 = highest(divisions[2], "Kaf Kaf A:")
+    highest4 = highest(divisions[3], "Kaf Kaf A:")
+    for i in data:
+        match i["Division"]:
+            case 1:
+                if i["Kaf Kaf A:"] <= highest1 and i["Resting Hours:"] <= 0:
+                    for j in range(i["Kaf Kaf A:"], highest1+1):
+                        div1.append(i)
+            case 2:
+                if i["Kaf Kaf A:"] <= highest2 and i["Resting Hours:"] <= 0:
+                    for j in range(i["Kaf Kaf A:"], highest2 + 1):
+                        div2.append(i)
+            case 3:
+                if i["Kaf Kaf A:"] <= highest3 and i["Resting Hours:"] <= 0:
+                    for j in range(i["Kaf Kaf A:"], highest3 + 1):
+                        div3.append(i)
+            case 4:
+                if i["Kaf Kaf A:"] <= highest4 and i["Resting Hours:"] <= 0:
+                    for j in range(i["Kaf Kaf A:"], highest4 + 1):
+                        div4.append(i)
+            case _:
+                pass
+    if div1:
+        temp = [random.choice(div1)]
+        count = 0
+        while len(temp) < amountOfKKA and count <= 10:
+            a = random.choice(div1)
+            if a not in temp: temp.append(a)
+            count += 1
+        div1 = copy.deepcopy(temp)
+    if div2:
+        temp = [random.choice(div2)]
+        count = 0
+        while len(temp) < amountOfKKA and count <= 10:
+            a = random.choice(div2)
+            if a not in temp: temp.append(a)
+            count += 1
+        div2 = copy.deepcopy(temp)
+    if div3:
+        temp = [random.choice(div3)]
+        count = 0
+        while len(temp) < amountOfKKA and count <= 10:
+            a = random.choice(div3)
+            if a not in temp: temp.append(a)
+            count += 1
+        div3 = copy.deepcopy(temp)
+    if div4:
+        temp = [random.choice(div4)]
+        count = 0
+        while len(temp) < amountOfKKA and count <= 10:
+            a = random.choice(div4)
+            if a not in temp: temp.append(a)
+            count += 1
+        div4 = copy.deepcopy(temp)
+    soldiers = [div1, div2, div3, div4]
+    r = random.choice(soldiers)
+    return r, data
+
+
+def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, num):
     soldiers = []
     # First thing's first, doing the mitbah and giving them a 24 hour break from doing missions.
-    if not debug:
+    if num == 1:
         for i in data:
             if i["Mitbah Cooldown:"] > 0:
                 i["Mitbah Cooldown:"] -= 1
-    if num == 1:
         mitbah, data = doMitbah(data)
         for i in mitbah:
             if not debug:
@@ -179,6 +248,14 @@ def cycle(data, amountOfSoldiers, amountOfSiurim, debug, num):
                 i["Mitbah Cooldown:"] = 2
                 i["Resting Hours:"] = 24
             soldiers.append((i, "Mitbah"))
+        kafkafa, data = KafKafA(data, amountOfKKA)
+        for i in kafkafa:
+            for j in data:
+                if not debug:
+                    if i["Name:"] == j["Name:"]:
+                        j["Kaf Kaf A:"] += 1
+                        j["Resting Hours:"] = 28
+            soldiers.append((i, "Kaf Kaf A"))
     # then, we need to do the hamal.
     if num % 2 == 1:
         hamal, data = doHamal(data)
@@ -212,18 +289,15 @@ def cycle(data, amountOfSoldiers, amountOfSiurim, debug, num):
     return soldiers, data
 
 
-def computeList(data, amountOfSoldiers, amountOfSiurim, debug):
-    happy = "False"
-    while happy != "True":
-        dataToIter = copy.deepcopy(data)
-        soldiers = []
-        for i in range(1, 7):
-            temp, dataToIter = (cycle(dataToIter, amountOfSoldiers, amountOfSiurim, debug, i))
-            for key in temp:
-                soldiers.append(key[0]["Name:"] + " " + key[1])
-        print("\n".join(soldiers))
-        happy = input("Are you happy with the given shavtzak? True/False")
+def computeList(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug): # ADD KK A
+    soldiers = []
+    for i in range(1, 7):
+        temp, data = (cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, i))
+        for key in temp:
+            soldiers.append(key[0]["Name:"] + " " + key[1])
     with open("soldiers.json", "w") as f:
         f.seek(0)
-        json.dump(dataToIter, f, indent=6)
-    return soldiers
+        json.dump(data, f, indent=6)
+    print("\n".join(soldiers))
+
+    return soldiers, data
