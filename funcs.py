@@ -11,7 +11,7 @@ def append_json(name: str, sg, tapuz, hamal, siur, kka, mitbah, restingHours, mi
             "IsHamal": isHamal,
             "IsPtorMitbah": isPtorMitbah,
             "IsPtorShmira": isPtorShmira,
-            "IsSevevMP": isSevevMp,
+            "Sevev": isSevevMp,
             "Division": division}
     with open("soldiers.json", "r+") as f:
         data = json.load(f)
@@ -44,7 +44,7 @@ def doMitbah(data):
     # adding only people who can go to the kitchen
     for i in data:
         if (i["Resting Hours:"] <= 0) and (i["Mitbah Cooldown:"] <= 0) and (i["Mitbah:"] <= highestMit)\
-                and (i["IsPtorMitbah"] == "False"):
+                and (i["IsPtorMitbah"] == "No"):
             # this section makes it linear. the more difference there is between the current soldier and the soldier
             # with the highest mitbah value the more likely it is to pick them.
             for n in range(i["Mitbah:"], highestMit+1):
@@ -60,7 +60,7 @@ def doShmira(data, type):
     options = []
     highestShmira = highest(data, type)
     for i in data:
-        if (i["Resting Hours:"] <= 0) and (i[type] <= highestShmira):
+        if (i["Resting Hours:"] <= 0) and (i[type] <= highestShmira) and(i["IsPtorShmira"] == "No"):
             # this section makes it linear. the more difference there is between the current soldier and the soldier
             # with the highest mitbah value the more likely it is to pick them.
             for n in range(i[type], highestShmira+1):
@@ -72,7 +72,7 @@ def doHamal(data):
     options = []
     highestHamal = highest(data, "Hamal:")
     for i in data:
-        if (i["Resting Hours:"] <= 0) and (i["Hamal:"] <= highestHamal) and (i["IsHamal"] == "True"):
+        if (i["Resting Hours:"] <= 0) and (i["Hamal:"] <= highestHamal) and (i["IsHamal"] == "Yes"):
             for n in range(i["Hamal:"], highestHamal+1):
                 options.append(i)
     return random.choice(options), data
@@ -177,6 +177,8 @@ def KafKafA(data, amountOfKKA):
     highest2 = highest(divisions[1],"Kaf Kaf A:")
     highest3 = highest(divisions[2], "Kaf Kaf A:")
     highest4 = highest(divisions[3], "Kaf Kaf A:")
+    if amountOfKKA == 1:
+        return [random.choice(data)], data
     for i in data:
         match i["Division"]:
             case 1:
@@ -200,39 +202,66 @@ def KafKafA(data, amountOfKKA):
     if div1:
         temp = [random.choice(div1)]
         count = 0
-        while len(temp) < amountOfKKA and count <= 10:
+        while len(temp) < amountOfKKA and count <= 20:
             a = random.choice(div1)
             if a not in temp: temp.append(a)
             count += 1
-        div1 = copy.deepcopy(temp)
+        div1 = temp
     if div2:
         temp = [random.choice(div2)]
         count = 0
-        while len(temp) < amountOfKKA and count <= 10:
+        while len(temp) < amountOfKKA and count <= 20:
             a = random.choice(div2)
             if a not in temp: temp.append(a)
             count += 1
-        div2 = copy.deepcopy(temp)
+        div2 = temp
     if div3:
         temp = [random.choice(div3)]
         count = 0
-        while len(temp) < amountOfKKA and count <= 10:
+        while len(temp) < amountOfKKA and count <= 20:
             a = random.choice(div3)
             if a not in temp: temp.append(a)
             count += 1
-        div3 = copy.deepcopy(temp)
+        div3 = temp
     if div4:
         temp = [random.choice(div4)]
         count = 0
-        while len(temp) < amountOfKKA and count <= 10:
+        while len(temp) < amountOfKKA and count <= 20:
             a = random.choice(div4)
             if a not in temp: temp.append(a)
             count += 1
-        div4 = copy.deepcopy(temp)
+        div4 = temp
     soldiers = [div1, div2, div3, div4]
     r = random.choice(soldiers)
     return r, data
 
+
+def return_score(data, soldiers, amount_of_siurim, amount_of_kka):
+    list_sg = []
+    list_tapuz = []
+    list_hamal = []
+    list_siur = []
+    for i in soldiers:
+        if i[1] == "SG": list_sg.append(i[0])
+        elif i[1] == "Tapuz": list_tapuz.append(i[0])
+        elif i[1] == "Siur": list_siur.append(i[0])
+        elif i[1] == "Hamal": list_hamal.append(i[0])
+        else: pass
+    all_soldiers = list_sg + list_tapuz + list_hamal + list_siur
+    score = 0
+    for i in range(len(all_soldiers)):
+        if (i + 2 < len(all_soldiers)) and (all_soldiers[i] == all_soldiers[i+2]):
+            if i > 12: score -= 15
+            else: score -= 5
+        elif (i + 3 < len(all_soldiers)) and (all_soldiers[i] == all_soldiers[i+3]):
+            if i > 12: score -= 10
+            else: score -= 5
+        else: score += 10
+    for i in data:
+        if i["Name:"] not in soldiers:
+            score -= 5
+        else: pass
+    return score
 
 def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, num):
     soldiers = []
@@ -289,15 +318,24 @@ def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, num):
     return soldiers, data
 
 
-def computeList(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug): # ADD KK A
-    soldiers = []
-    for i in range(1, 7):
-        temp, data = (cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, i))
-        for key in temp:
-            soldiers.append(key[0]["Name:"] + " " + key[1])
+def computeList(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, debug):
+    best_score = -999
+    for j in range(attempts):
+        data_to_iter = copy.deepcopy(data)
+        temp_score = -99
+        soldiers = []
+        for i in range(1, 7):
+            temp, data_to_iter = (cycle(data_to_iter, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, i))
+            for key in temp:
+                soldiers.append((key[0]["Name:"], key[1]))
+        temp_score = return_score(data_to_iter, soldiers, amountOfSoldiers, amountOfKKA)
+        if temp_score > best_score:
+            best_soldiers = soldiers
+            best_score = temp_score
+            best_data = data_to_iter
+        if j % 10 == 0: print(j)
     with open("soldiers.json", "w") as f:
         f.seek(0)
-        json.dump(data, f, indent=6)
-    print("\n".join(soldiers))
+        json.dump(best_data, f, indent=6)
 
-    return soldiers, data
+    return best_soldiers
