@@ -6,7 +6,6 @@ from funcs import computeList
 from PyQt5.QtWidgets import *
 import cProfile
 
-
 def app():
     app = QApplication(sys.argv)
     screen = Window()
@@ -15,12 +14,19 @@ def app():
 
 # TODO LIST
 """
-RETURN SCORE
+RETURN SCORE +
 SEVEV MP
 TRANSLATE UI
 GIMELIM
 UPGRADE UI
---KAF KAF A--
+KAF KAF A +
+export shavtzak +
+"""
+# TO IMPROVE
+"""
+dont use deepcopy use json instead
+improve score +
+improve kafkafa +
 """
 
 with open("soldiers.json", "r") as f:
@@ -31,5 +37,14 @@ with open("soldiers.json", "r") as f:
                     i[n] = int(i[n])
                 except ValueError as exc:
                     pass
-#computeList(data, 1, 2, 1, False)
+
+#soldiers = computeList(data, 2, 2, 2, 200, False)
+#print(soldiers)
+"""
+p = cProfile.Profile()
+p.run("computeList(data, 2, 2, 1, 5000, False)")
+s = pstats.Stats(p)
+s.sort_stats("cumtime").print_stats()
+#app()
+"""
 app()
