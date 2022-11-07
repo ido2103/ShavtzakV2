@@ -9,14 +9,17 @@ class Window(QWidget):
         QWidget.__init__(self)
         self.layout = QVBoxLayout(self)
         self.setWindowTitle("Shavtzak Maker")
+        self.soldiers = []
 
         self.tabs = QTabWidget()
         self.tab1 = QWidget()
         self.tab2 = QWidget()
+        self.tab3 = QWidget()
         self.tabs.resize(1000, 1000)
 
         self.tabs.addTab(self.tab1, "Main")
         self.tabs.addTab(self.tab2, "Soldiers")
+        self.tabs.addTab(self.tab3, "Shavtzak")
         # setting up tab 1 (used for general control)
         self.tab1.layout = QVBoxLayout(self)
         self.tab1.setLayout(self.tab1.layout)
@@ -25,7 +28,7 @@ class Window(QWidget):
             data = json.load(f)
         self.makeShavtzak = QPushButton(self)
         self.makeShavtzak.setText("Make Shavtzak")
-        self.makeShavtzak.clicked.connect(lambda: self.shavtzak(1, 2, 1, False))
+        self.makeShavtzak.clicked.connect(lambda: self.shavtzak(1, 2, 3, 1, False))
         self.tab1.layout.addWidget(self.makeShavtzak)
 
         # Setting up tab 2 (used for the list)
@@ -56,7 +59,14 @@ class Window(QWidget):
 
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
-    def shavtzak(self, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug):
+        # setting up tab 3
+        self.tab3.layout = QVBoxLayout()
+        self.tab3.setLayout(self.tab3.layout)
+
+        self.shavtzak_table = ShavtzakTable()
+        self.tab3.layout.addWidget(self.shavtzak_table)
+
+    def shavtzak(self, amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, debug):
         with open("soldiers.json", "r") as f:
             data = json.load(f)
             for i in data:
@@ -66,8 +76,12 @@ class Window(QWidget):
                     except ValueError as exc:
                         pass
         try:
-            computeList(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug)
+            self.soldiers = computeList(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, debug)
             self.table1.processDict(data)
+            with open("shavtzak.json", "w") as f:
+                f.seek(0)
+                json.dump([self.soldiers, amountOfSoldiers, amountOfSiurim], f, indent=6)
+            self.shavtzak_table.set_items()
         except Exception as exc:
             print(exc)
 
@@ -86,12 +100,16 @@ class Table(QTableWidget):
                 "IsHamal",
                 "IsPtorMitbah",
                 "IsPtorShmira",
-                "IsSevevMP",
+                "Sevev",
                  "Division"]
         QTableWidget.__init__(self)  # super
         self.setColumnCount(len(self.keys))
         self.setRowCount(len(self.data))
         self.setHorizontalHeaderLabels(self.keys)
+        for i in range(1, 6):
+            self.setColumnWidth(i, 75)
+        self.setColumnWidth(8, 115)
+        self.setColumnWidth(13, 80)
         # setting the items in the 2d table using doubled for loops.
         for r, dictionary in enumerate(self.data):
             for c, key in enumerate(dictionary):
@@ -113,7 +131,7 @@ class Table(QTableWidget):
                          "IsHamal": 0,
                          "IsPtorMitbah": 0,
                          "IsPtorShmira": 0,
-                         "IsSevevMP": 0,
+                         "Sevev": 0,
                          "Division": 0}
             for c, info in enumerate(name):
                 if self.item(r, c) is None:
@@ -139,10 +157,10 @@ class Table(QTableWidget):
                      "KafKaf A:": "0",
                      "Resting Hours:": "0",
                      "Mitbah Cooldown:": "0",
-                     "IsHamal": "False",
-                     "IsPtorMitbah": "False",
-                     "IsPtorShmira": "False",
-                     "IsSevevMP": "False",
+                     "IsHamal": "No",
+                     "IsPtorMitbah": "No",
+                     "IsPtorShmira": "No",
+                     "Sevev": "",
                      "Division": "0"}
         for c, key in enumerate(temp_dict):
             self.setItem(self.rowCount() - 1, c, QtWidgets.QTableWidgetItem(temp_dict[key]))  # setting up the new row
@@ -215,3 +233,97 @@ class Table(QTableWidget):
         for r, dictionary in enumerate(data):
             for c, key in enumerate(dictionary):
                 self.setItem(r, c, QtWidgets.QTableWidgetItem(str(dictionary[key])))
+
+
+class ShavtzakTable(QTableWidget):
+    def __init__(self):
+        self.keys = ["ש.ג", "תפוז", "חמל", "סיור", "ככ א", "מטבח"]
+        self.hours = ["6:00-10:00", "10:00-14:00", "14:00-18:00", "18:00-22:00",
+                      "22:00-2:00", "2:00-6:00"]
+        QTableWidget.__init__(self)
+        self.setRowCount(6)
+        self.setColumnCount(len(self.keys))
+        self.setHorizontalHeaderLabels(self.keys)
+        self.setVerticalHeaderLabels(self.hours)
+        self.setColumnWidth(3, 150)
+        self.setColumnWidth(4, 150)
+        self.setColumnWidth(5, 150)
+        self.setColumnWidth(6, 150)
+        self.set_items()
+
+    def set_items(self):
+        with open("shavtzak.json", "r") as f:
+            self.json_data = json.load(f)
+        soldiers = self.json_data[0]
+        amount_of_soldiers = self.json_data[1]
+        amount_of_siurim = self.json_data[2]
+        self.mitbah = []
+        self.kka = []
+        self.siur = []
+        self.hamal = []
+        self.tapuz = []
+        self.sg = []
+        for i in soldiers:
+            match i[1]:
+                case "Mitbah":
+                    self.mitbah.append(i[0])
+                case "Kaf Kaf A":
+                    self.kka.append(i[0])
+                case "Siur":
+                    self.siur.append(i[0])
+                case "Hamal":
+                    self.hamal.append(i[0])
+                    self.hamal.append(i[0])
+                case "Tapuz":
+                    self.tapuz.append(i[0])
+                case "SG":
+                    self.sg.append(i[0])
+                case _:
+                    print(i)
+        self.mitbah = ", ".join(self.mitbah)
+        for i in range(4):
+            self.setItem(i, 5, QtWidgets.QTableWidgetItem(self.mitbah))
+        for i, name in enumerate(self.sg):
+            self.setItem(i, 0, QtWidgets.QTableWidgetItem(name))
+        for i, name in enumerate(self.tapuz):
+            self.setItem(i, 1, QtWidgets.QTableWidgetItem(name))
+        for i, name in enumerate(self.hamal):
+            self.setItem(i, 2, QtWidgets.QTableWidgetItem(name))
+        match amount_of_soldiers:
+            case 1:
+                match amount_of_siurim:
+                    case 1:
+                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                    case 2:
+                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                        self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
+                        self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
+                    case 3:
+                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                        self.setItem(2, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
+                        self.setItem(3, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
+                        self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[2]))
+                        self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[2]))
+            case 2:
+                match amount_of_siurim:
+                    case 1:
+                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
+                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
+                    case 2:
+                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
+                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
+                        self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
+                        self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
+                    case 3:
+                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]+ ", "+ self.siur[1]))
+                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]+ ", "+ self.siur[1]))
+                        self.setItem(2, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
+                        self.setItem(3, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
+                        self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[4]+ ", "+ self.siur[5]))
+                        self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[4]+ ", "+ self.siur[5]))
+        self.kka = ", ".join(self.kka)
+        for i in range(5):
+            self.setItem(i, 4, QtWidgets.QTableWidgetItem(self.kka))
