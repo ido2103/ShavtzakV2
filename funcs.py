@@ -83,10 +83,23 @@ def doSiur(data, amountOfSoldiers):
     # highest number of siurim from every division
     divisions = seperate_to_divisions(data)
     div1, div2, div3, div4 = [], [], [], []
-    highest1 = highest(divisions[0], "Siur:")
-    highest2 = highest(divisions[1], "Siur:")
-    highest3 = highest(divisions[2], "Siur:")
-    highest4 = highest(divisions[3], "Siur:")
+    try:
+        highest1 = highest(divisions[0], "Siur:")
+    except Exception:
+        pass
+    try:
+        highest2 = highest(divisions[1], "Siur:")
+    except Exception:
+        pass
+    try:
+        highest3 = highest(divisions[2], "Siur:")
+    except Exception:
+        pass
+    try:
+        highest4 = highest(divisions[3], "Siur:")
+    except Exception:
+        pass
+
     # separating everyone into their divisions
     for i in data:
         match i["Division"]:
@@ -124,7 +137,7 @@ def doSiur(data, amountOfSoldiers):
             if div1:
                 temp = [random.choice(div1)]
                 count = 0
-                while len(temp) < amountOfSoldiers and count < 10:
+                while len(temp) < amountOfSoldiers and count < 20:
                     a = random.choice(div1)
                     if a not in temp: temp.append(a)
                     count += 1
@@ -133,7 +146,7 @@ def doSiur(data, amountOfSoldiers):
             if div2:
                 temp = [random.choice(div2)]
                 count = 0
-                while len(temp) < amountOfSoldiers and count < 10:
+                while len(temp) < amountOfSoldiers and count < 20:
                     a = random.choice(div2)
                     if a not in temp: temp.append(a)
                     count += 1
@@ -141,7 +154,7 @@ def doSiur(data, amountOfSoldiers):
             if div3:
                 temp = [random.choice(div3)]
                 count = 0
-                while len(temp) < amountOfSoldiers and count < 10:
+                while len(temp) < amountOfSoldiers and count < 20:
                     a = random.choice(div3)
                     if a not in temp: temp.append(a)
                     count += 1
@@ -149,8 +162,8 @@ def doSiur(data, amountOfSoldiers):
             if div4:
                 temp = [random.choice(div4)]
                 count = 0
-                while len(temp) < amountOfSoldiers:
-                    a = random.choice(div3)
+                while len(temp) < amountOfSoldiers and count < 20:
+                    a = random.choice(div4)
                     if a not in temp: temp.append(a)
                     count += 1
                 div4 = temp
@@ -161,9 +174,10 @@ def doSiur(data, amountOfSoldiers):
     soldiers.append(div2)
     soldiers.append(div3)
     soldiers.append(div4)
-    for i in soldiers:
-        if not i:
-            soldiers.remove(i)
+    for j in soldiers:
+        for i in soldiers:
+            if not i:
+                soldiers.remove(i)
     a = random.choice(soldiers)
     if amountOfSoldiers == 1:
         return [a], data
@@ -173,10 +187,13 @@ def doSiur(data, amountOfSoldiers):
 def KafKafA(data, amountOfKKA):
     divisions = seperate_to_divisions(data)
     div1, div2, div3, div4 = [], [], [], []
-    highest1 = highest(divisions[0], "Kaf Kaf A:")
-    highest2 = highest(divisions[1],"Kaf Kaf A:")
-    highest3 = highest(divisions[2], "Kaf Kaf A:")
-    highest4 = highest(divisions[3], "Kaf Kaf A:")
+    try:
+        highest1 = highest(divisions[0], "Kaf Kaf A:")
+        highest2 = highest(divisions[1],"Kaf Kaf A:")
+        highest3 = highest(divisions[2], "Kaf Kaf A:")
+        highest4 = highest(divisions[3], "Kaf Kaf A:")
+    except IndexError:
+        pass
     if amountOfKKA == 1:
         return [random.choice(data)], data
     for i in data:
@@ -236,7 +253,7 @@ def KafKafA(data, amountOfKKA):
     return r, data
 
 
-def return_score(data, soldiers, amount_of_siurim, amount_of_kka):
+def return_score(data, soldiers):
     list_sg = []
     list_tapuz = []
     list_hamal = []
@@ -256,12 +273,46 @@ def return_score(data, soldiers, amount_of_siurim, amount_of_kka):
         elif (i + 3 < len(all_soldiers)) and (all_soldiers[i] == all_soldiers[i+3]):
             if i > 12: score -= 10
             else: score -= 5
+        elif (i + 4 < len(all_soldiers)) and (all_soldiers[i] == all_soldiers[i+4]):
+            if i > 12: score -= 10
+            else: score -= 3
         else: score += 10
     for i in data:
         if i["Name:"] not in soldiers:
-            score -= 5
+            score -= 1
         else: pass
     return score
+
+
+def sevev_json(sevev, list_to_remove):
+    with open("soldiers.json", "r") as f:
+        data_to_iter = json.load(f)
+        for i in data_to_iter:
+            for n in i:
+                try:
+                    i[n] = int(i[n])
+                except ValueError as exc:
+                    pass
+    for i in list_to_remove: # TEST IT
+        if i in data_to_iter:
+            data_to_iter.remove(i)
+
+    if sevev == "מפ":
+        for j in range(len(data_to_iter)):
+            for i in data_to_iter:
+                if i["Sevev"] != "MP":
+                    data_to_iter.remove(i)
+
+    if sevev == "סמפ":
+        for j in range(len(data_to_iter)):
+            for i in data_to_iter:
+                if i["Sevev"] != "SMP":
+                    data_to_iter.remove(i)
+
+
+    with open("json_to_iter.json", "w") as f:
+        json.dump(data_to_iter, f, indent=2)
+
 
 def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, num):
     soldiers = []
@@ -318,24 +369,36 @@ def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, num):
     return soldiers, data
 
 
-def computeList(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, debug):
+def computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, debug):
     best_score = -999
+    sevev_json(sevev, [])
     for j in range(attempts):
-        data_to_iter = copy.deepcopy(data)
-        temp_score = -99
+        with open("json_to_iter.json", "r") as f:
+            data_to_iter = json.load(f)
         soldiers = []
         for i in range(1, 7):
             temp, data_to_iter = (cycle(data_to_iter, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, i))
             for key in temp:
                 soldiers.append((key[0]["Name:"], key[1]))
-        temp_score = return_score(data_to_iter, soldiers, amountOfSoldiers, amountOfKKA)
+        temp_score = return_score(data_to_iter, soldiers)
         if temp_score > best_score:
             best_soldiers = soldiers
             best_score = temp_score
-            best_data = data_to_iter
-        if j % 10 == 0: print(j)
+            best_data = copy.deepcopy(data_to_iter)
+        if j % 100 == 0: print(j)
+    # replace the values of the soldiers in soldiers.json with the ones we just iterated through
+    with open("soldiers.json", "r") as f:
+        all_data = json.load(f)
+
+    for i in all_data:
+        for j in best_data:
+            if i["Name:"] == j["Name:"]:
+                i = j
+                best_data.remove(j)
+
     with open("soldiers.json", "w") as f:
         f.seek(0)
-        json.dump(best_data, f, indent=6)
+        json.dump(all_data, f, indent=6)
+    print(best_score)
 
     return best_soldiers
