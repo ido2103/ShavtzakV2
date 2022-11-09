@@ -127,7 +127,8 @@ class Window(QWidget):
                     except ValueError as exc:
                         pass
         try:
-            self.soldiers = computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, debug)
+            self.soldiers = computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts
+                                        , sevev, debug)
             with open("shavtzak.json", "w") as f:
                 f.seek(0)
                 json.dump([self.soldiers, amountOfSoldiers, amountOfSiurim], f, indent=6)
