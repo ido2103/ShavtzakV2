@@ -75,7 +75,26 @@ def doHamal(data):
         if (i["Resting Hours:"] <= 0) and (i["Hamal:"] <= highestHamal) and (i["IsHamal"] == "Yes"):
             for n in range(i["Hamal:"], highestHamal+1):
                 options.append(i)
-    return random.choice(options), data
+    try:
+        a = random.choice(options)
+    except Exception:
+        return {
+            "Name:": "ERROR",
+            "S.G:": 10,
+            "Tapuz:": 18,
+            "Hamal:": 0,
+            "Siur:": 0,
+            "Mitbah:": 7,
+            "Kaf Kaf A:": 0,
+            "Resting Hours:": 8,
+            "Mitbah Cooldown:": 0,
+            "IsHamal": "No",
+            "IsPtorMitbah": "No",
+            "IsPtorShmira": "No",
+            "Sevev": "MP",
+            "Division": 999
+      }, data
+    return a, data
 
 
 def doSiur(data, amountOfSoldiers):
@@ -267,12 +286,22 @@ def return_score(data, soldiers):
     all_soldiers = list_sg + list_tapuz + list_hamal + list_siur
     score = 0
     for i in range(len(all_soldiers)):
+        if all_soldiers[i] == "ERROR":
+            score -= 999
         if (i + 2 < len(all_soldiers)) and (all_soldiers[i] == all_soldiers[i+2]):
             if i > 12: score -= 15
-            else: score -= 5
+            else: score -= 15
         elif (i + 3 < len(all_soldiers)) and (all_soldiers[i] == all_soldiers[i+3]):
             if i > 12: score -= 10
             else: score -= 5
+        elif (i + 4 < len(all_soldiers)) and (all_soldiers[i] == all_soldiers[i+4]):
+            score -= 3
+        elif (i + 5 < len(all_soldiers)) and (all_soldiers[i] == all_soldiers[i + 5]):
+            score -= 3
+        elif (i + 11 < len(all_soldiers)) and (all_soldiers[i] == all_soldiers[i+11]):
+            score -= 15
+        elif (i + 10 < len(all_soldiers)) and (all_soldiers[i] == all_soldiers[i + 10]):
+            score -= 10
         elif (i + 4 < len(all_soldiers)) and (all_soldiers[i] == all_soldiers[i+4]):
             if i > 12: score -= 10
             else: score -= 3
@@ -291,11 +320,15 @@ def sevev_json(sevev, list_to_remove):
             for n in i:
                 try:
                     i[n] = int(i[n])
-                except ValueError as exc:
+                except ValueError:
                     pass
-    for i in list_to_remove: # TEST IT
-        if i in data_to_iter:
-            data_to_iter.remove(i)
+    for j in range(len(list_to_remove)):
+        for i in data_to_iter: # TEST IT
+            if i["Name:"] in list_to_remove:
+                try:
+                    data_to_iter.remove(i)
+                except Exception as exc:
+                    print(exc)
 
     if sevev == "מפ":
         for j in range(len(data_to_iter)):
@@ -314,7 +347,7 @@ def sevev_json(sevev, list_to_remove):
         json.dump(data_to_iter, f, indent=2)
 
 
-def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, num):
+def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, num):
     soldiers = []
     # First thing's first, doing the mitbah and giving them a 24 hour break from doing missions.
     if num == 1:
@@ -323,61 +356,57 @@ def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, num):
                 i["Mitbah Cooldown:"] -= 1
         mitbah, data = doMitbah(data)
         for i in mitbah:
-            if not debug:
-                i["Mitbah:"] += 1
-                i["Mitbah Cooldown:"] = 2
-                i["Resting Hours:"] = 24
+            i["Mitbah:"] += 1
+            i["Mitbah Cooldown:"] = 2
+            i["Resting Hours:"] = 24
             soldiers.append((i, "Mitbah"))
         kafkafa, data = KafKafA(data, amountOfKKA)
         for i in kafkafa:
             for j in data:
-                if not debug:
-                    if i["Name:"] == j["Name:"]:
-                        j["Kaf Kaf A:"] += 1
-                        j["Resting Hours:"] = 28
+                if i["Name:"] == j["Name:"]:
+                    j["Kaf Kaf A:"] += 1
+                    j["Resting Hours:"] = 28
             soldiers.append((i, "Kaf Kaf A"))
     # then, we need to do the hamal.
     if num % 2 == 1:
         hamal, data = doHamal(data)
-        if not debug:
-            hamal["Hamal:"] += 1
-            hamal["Resting Hours:"] = 16
+        hamal["Hamal:"] += 1
+        hamal["Resting Hours:"] = 16
         soldiers.append((hamal, "Hamal"))
     # then, siur.
     if num == 1 or (num == 3 and amountOfSiurim > 1) or (num == 5 and amountOfSiurim > 2):
         siur, data = doSiur(data, amountOfSoldiers)
         for i in siur:
-            if not debug:
-                i["Siur:"] += 1
-                i["Resting Hours:"] = 16
+            i["Siur:"] += 1
+            i["Resting Hours:"] = 16
             soldiers.append((i, "Siur"))
     # finally, smirot.
     tapuz, data = doShmira(data, "Tapuz:")
-    if not debug:
-        tapuz["Tapuz:"] += 1
-        tapuz["Resting Hours:"] = 12
+    tapuz["Tapuz:"] += 1
+    tapuz["Resting Hours:"] = 12
     sg, data = doShmira(data, "S.G:")
-    if not debug:
-        sg["S.G:"] += 1
-        sg["Resting Hours:"] = 12
+    sg["S.G:"] += 1
+    sg["Resting Hours:"] = 12
     soldiers.append((tapuz, "Tapuz"))
     soldiers.append((sg, "SG"))
-    if not debug:
-        for i in data:
-            if i["Resting Hours:"] > 0:
-                i["Resting Hours:"] -= 4
+    for i in data:
+        if i["Resting Hours:"] > 0:
+            i["Resting Hours:"] -= 4
     return soldiers, data
 
 
-def computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, debug):
+def computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, inactive):
     best_score = -999
-    sevev_json(sevev, [])
+    sevev_json(sevev, inactive)
     for j in range(attempts):
         with open("json_to_iter.json", "r") as f:
             data_to_iter = json.load(f)
         soldiers = []
         for i in range(1, 7):
-            temp, data_to_iter = (cycle(data_to_iter, amountOfSoldiers, amountOfSiurim, amountOfKKA, debug, i))
+            try:
+                temp, data_to_iter = (cycle(data_to_iter, amountOfSoldiers, amountOfSiurim, amountOfKKA, i))
+            except TypeError:
+                pass
             for key in temp:
                 soldiers.append((key[0]["Name:"], key[1]))
         temp_score = return_score(data_to_iter, soldiers)
@@ -400,5 +429,4 @@ def computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, 
         f.seek(0)
         json.dump(all_data, f, indent=6)
     print(best_score)
-
     return best_soldiers
