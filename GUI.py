@@ -13,73 +13,78 @@ class Window(QWidget):
         self.setWindowTitle("Shavtzak Maker")
         self.soldiers = []
         self.sevev = "רגיל"
+        self.inactive = []
 
         self.tabs = QTabWidget()
         self.tab1 = QWidget()
         self.tab2 = QWidget()
         self.tab3 = QWidget()
-        self.tabs.resize(1000, 1000)
+        self.tabs.resize(1, 1)
 
         self.tabs.addTab(self.tab1, "Main")
         self.tabs.addTab(self.tab2, "Soldiers")
-        self.tabs.addTab(self.tab3, "Shavtzak")
+        self.tabs.addTab(self.tab3, "Remove Soldiers")
         # setting up tab 1 (used for general control)
-        self.tab1.layout = QVBoxLayout(self)
+        self.tab1.layout = QGridLayout(self)
         self.tab1.setLayout(self.tab1.layout)
+        self.tab1.layout.setRowStretch(2, 1)
+
+
+        self.shavtzak_table = ShavtzakTable()
+        self.tab1.layout.addWidget(self.shavtzak_table, 0, 1)
 
         self.amount_of_siurim_label = QLabel()
         self.amount_of_siurim_label.setText("כמות הסיורים")
-        self.tab1.layout.addWidget(self.amount_of_siurim_label, alignment=Qt.AlignRight)
+        self.tab1.layout.addWidget(self.amount_of_siurim_label, 1, 1)
 
         self.amount_of_siurim = QLineEdit()
         self.amount_of_siurim.setText("2")
         self.amount_of_siurim.setValidator(QIntValidator())
-        self.tab1.layout.addWidget(self.amount_of_siurim, alignment=Qt.AlignRight)
+        self.tab1.layout.addWidget(self.amount_of_siurim, 2, 1)
 
         self.amount_of_soldiers_label = QLabel()
         self.amount_of_soldiers_label.setText("כמות חיילים בכל סיור")
-        self.tab1.layout.addWidget(self.amount_of_soldiers_label, alignment=Qt.AlignRight)
+        self.tab1.layout.addWidget(self.amount_of_soldiers_label, 3, 1)
 
         self.amount_of_soldiers = QLineEdit()
         self.amount_of_soldiers.setText("1")
         self.amount_of_soldiers.setValidator(QIntValidator())
-        self.tab1.layout.addWidget(self.amount_of_soldiers, alignment=Qt.AlignRight)
+        self.tab1.layout.addWidget(self.amount_of_soldiers, 4, 1)
 
         self.amount_of_kka_label = QLabel()
         self.amount_of_kka_label.setText("הכנס מספר חיילים לככ א")
-        self.tab1.layout.addWidget(self.amount_of_kka_label, alignment=Qt.AlignRight)
+        self.tab1.layout.addWidget(self.amount_of_kka_label, 5, 1)
 
         self.amount_of_kka = QLineEdit()
         self.amount_of_kka.setText("1")
         self.amount_of_kka.setValidator(QIntValidator())
-        self.tab1.layout.addWidget(self.amount_of_kka, alignment=Qt.AlignRight)
+        self.tab1.layout.addWidget(self.amount_of_kka, 6, 1)
 
         self.attempts_label = QLabel()
         self.attempts_label.setText("כמה נסיונות ליצירת שבצק? ממולץ 500-1000")
-        self.tab1.layout.addWidget(self.attempts_label, alignment=Qt.AlignRight)
+        self.tab1.layout.addWidget(self.attempts_label, 7, 1)
 
         self.attempts = QLineEdit()
         self.attempts.setText("500")
         self.attempts.setValidator(QIntValidator())
-        self.tab1.layout.addWidget(self.attempts, alignment=Qt.AlignRight)
+        self.tab1.layout.addWidget(self.attempts, 8, 1)
 
         self.sevev_label = QLabel()
         self.sevev_label.setText("בחר סבב")
-        self.tab1.layout.addWidget(self.sevev_label, alignment=Qt.AlignRight)
+        self.tab1.layout.addWidget(self.sevev_label, 9, 2)
 
         self.sevev_box = QComboBox()
         self.sevev_box.addItems(["רגיל", "מפ", "סמפ"])
         self.sevev_box.currentTextChanged.connect(self.combo_box)
-        self.tab1.layout.addWidget(self.sevev_box, alignment=Qt.AlignRight)
+        self.tab1.layout.addWidget(self.sevev_box, 9, 1)
 
-        with open("soldiers.json", "r") as f:
-            data = json.load(f)
+
         self.makeShavtzak = QPushButton(self)
         self.makeShavtzak.setText("Make Shavtzak")
         self.makeShavtzak.clicked.connect(lambda: self.shavtzak(int(self.amount_of_soldiers.text()),
                                     int(self.amount_of_siurim.text()), int(self.amount_of_kka.text()),
-                                    int(self.attempts.text()), self.sevev, False))
-        self.tab1.layout.addWidget(self.makeShavtzak)
+                                    int(self.attempts.text()), self.sevev, self.inactive))
+        self.tab1.layout.addWidget(self.makeShavtzak, 10, 1)
 
 
         # Setting up tab 2 (used for the list)
@@ -108,16 +113,27 @@ class Window(QWidget):
         self.buttonResetClmn.clicked.connect(self.table1.removeclmn)
         self.tab2.layout.addWidget(self.buttonResetClmn)
 
-        self.layout.addWidget(self.tabs)
-        self.setLayout(self.layout)
-        # setting up tab 3
         self.tab3.layout = QVBoxLayout()
         self.tab3.setLayout(self.tab3.layout)
 
-        self.shavtzak_table = ShavtzakTable()
-        self.tab1.layout.addWidget(self.shavtzak_table)
+        self.soldierList = QListWidget(self)
+        with open("soldiers.json", "r") as f:
+            data = json.load(f)
+        for i in data:
+            self.soldierList.addItem(i["Name:"])
+        self.soldierList.clicked.connect(lambda: self.item_clicked(self.soldierList))
+        self.tab3.layout.addWidget(self.soldierList)
 
-    def shavtzak(self, amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, debug):
+        self.removed_list = QListWidget()
+        for i in self.inactive:
+            self.removed_list.addItem(i)
+        self.removed_list.clicked.connect(lambda: self.item_clicked(self.removed_list))
+        self.tab3.layout.addWidget(self.removed_list)
+
+        self.layout.addWidget(self.tabs)
+        self.setLayout(self.layout)
+
+    def shavtzak(self, amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, inactive):
         with open("soldiers.json", "r") as f:
             data = json.load(f)
             for i in data:
@@ -128,7 +144,7 @@ class Window(QWidget):
                         pass
         try:
             self.soldiers = computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts
-                                        , sevev, debug)
+                                        , sevev, inactive)
             with open("shavtzak.json", "w") as f:
                 f.seek(0)
                 json.dump([self.soldiers, amountOfSoldiers, amountOfSiurim], f, indent=6)
@@ -140,12 +156,35 @@ class Window(QWidget):
             msg.setIcon(QMessageBox.Information)
             msg.setText("שבצק נוצר!")
             msg.exec_()
-        except Exception as exc:
-            print(exc)
+        except IndexError as exc:
+            exception = QMessageBox()
+            exception.setIcon(QMessageBox.Critical)
+            exception.setText(f"אין מספיק אנשים להכין שבצק! \n Exception: IndexError {exc}")
+            exception.exec_()
 
     def combo_box(self):
         self.sevev = self.sevev_box.currentText()
         print(self.sevev)
+
+    def item_clicked(self, list):
+        try:
+            if list == self.soldierList:
+                item = self.soldierList.currentItem()
+                row = self.soldierList.currentRow()
+                if item.text() not in self.inactive:
+                    self.inactive.append(item.text())
+                    self.removed_list.addItem(item.text())
+                    self.soldierList.takeItem(row)
+
+            if list == self.removed_list:
+                item1 = self.removed_list.currentItem()
+                row = self.removed_list.currentRow()
+                self.inactive.remove(item1.text())
+                self.removed_list.takeItem(row)
+                self.soldierList.addItem(item1.text())
+        except Exception as exc:
+            print(exc)
+
 
 
 class Table(QTableWidget):
@@ -168,10 +207,7 @@ class Table(QTableWidget):
         self.setColumnCount(len(self.keys))
         self.setRowCount(len(self.data))
         self.setHorizontalHeaderLabels(self.keys)
-        for i in range(1, 6):
-            self.setColumnWidth(i, 75)
-        self.setColumnWidth(8, 115)
-        self.setColumnWidth(13, 80)
+        self.resizeRowsToContents()
         # setting the items in the 2d table using doubled for loops.
         for r, dictionary in enumerate(self.data):
             for c, key in enumerate(dictionary):
@@ -307,10 +343,7 @@ class ShavtzakTable(QTableWidget):
         self.setColumnCount(len(self.keys))
         self.setHorizontalHeaderLabels(self.keys)
         self.setVerticalHeaderLabels(self.hours)
-        self.setColumnWidth(3, 150)
-        self.setColumnWidth(4, 150)
-        self.setColumnWidth(5, 150)
-        self.setColumnWidth(6, 150)
+        #self.setMaximumSize(677, 205)
         self.set_items()
 
     def set_items(self):
@@ -384,7 +417,6 @@ class ShavtzakTable(QTableWidget):
                         self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
                         self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
                     case 3:
-                        print(self.siur)
                         self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]+ ", "+ self.siur[1]))
                         self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]+ ", "+ self.siur[1]))
                         self.setItem(2, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
