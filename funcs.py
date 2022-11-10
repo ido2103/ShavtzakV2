@@ -347,7 +347,20 @@ def sevev_json(sevev, list_to_remove):
         json.dump(data_to_iter, f, indent=2)
 
 
-def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, num):
+def custom_mission(data, amount_of_people):
+    available_soldiers = []
+    chosen_soldiers = []
+    for i in data:
+        if i["Resting Hours:"] <= 0:
+            available_soldiers.append(i)
+    for i in range(amount_of_people):
+        chosen_soldiers.append(random.choice(available_soldiers))
+
+
+    return data, chosen_soldiers
+
+
+def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, num, custom_name, custom_num):
     soldiers = []
     # First thing's first, doing the mitbah and giving them a 24 hour break from doing missions.
     if num == 1:
@@ -367,6 +380,11 @@ def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, num):
                     j["Kaf Kaf A:"] += 1
                     j["Resting Hours:"] = 28
             soldiers.append((i, "Kaf Kaf A"))
+        if custom_name != "":
+            data, custom_soldiers = custom_mission(data, custom_num)
+            for i in custom_soldiers:
+                i["Resting Hours:"] = 24
+                soldiers.append((i, "Custom"))
     # then, we need to do the hamal.
     if num % 2 == 1:
         hamal, data = doHamal(data)
@@ -395,7 +413,7 @@ def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, num):
     return soldiers, data
 
 
-def computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, inactive):
+def computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, inactive, custom_name, custom_num):
     best_score = -999
     sevev_json(sevev, inactive)
     for j in range(attempts):
@@ -404,9 +422,10 @@ def computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, 
         soldiers = []
         for i in range(1, 7):
             try:
-                temp, data_to_iter = (cycle(data_to_iter, amountOfSoldiers, amountOfSiurim, amountOfKKA, i))
-            except TypeError:
-                pass
+                temp, data_to_iter = cycle(data_to_iter, amountOfSoldiers, amountOfSiurim, amountOfKKA, i,
+                                                custom_name, custom_num)
+            except Exception as exc:
+                print(exc)
             for key in temp:
                 soldiers.append((key[0]["Name:"], key[1]))
         temp_score = return_score(data_to_iter, soldiers)
