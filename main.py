@@ -15,8 +15,7 @@ def app():
     sys.exit(app.exec_())
 
 
-#computeList(1, 1, 1, 500, "סמפ", False)
-
+#computeList(1, 1, 1, 500, "מפ", [], "Wow!", 1)
 
 app()
 
