@@ -1,11 +1,6 @@
-import pstats
-
 from GUI import Window
 import sys
-import json
-from funcs import computeList
-from PyQt5.QtWidgets import *
-import cProfile
+from PyQt5.QtWidgets import QApplication
 
 
 def app():
@@ -15,24 +10,9 @@ def app():
     sys.exit(app.exec_())
 
 
-#computeList(1, 1, 1, 500, "מפ", [], "Wow!", 1)
+#computeList(1, 1, 1, 500, "מפ", ['Dolev', 'Ariel Ben Hamo', 'Ido', 'Adeel', 'Lidor', 'Mark', 'Sean'], "", 0)
 
-app()
 
-with open("soldiers.json", "r") as f:
-        data = json.load(f)
-        for i in data:
-            for n in i:
-                try:
-                    i[n] = int(i[n])
-                except ValueError as exc:
-                    pass
+if __name__ == '__main__':
+    app()
 
-with cProfile.Profile() as pr:
-        computeList(1, 1, 1, 500, False)
-
-s = pstats.Stats(pr)
-s.sort_stats("cumtime").print_stats()
-s.print_stats()
-
-app()
