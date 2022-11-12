@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIntValidator
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QSortFilterProxyModel, QAbstractTableModel
 from funcs import append_json, computeList
 import json
 
@@ -11,6 +11,9 @@ class Window(QWidget):
         QWidget.__init__(self)
         self.layout = QVBoxLayout(self)
         self.setWindowTitle("Shavtzak Maker")
+        with open("style.txt", "r") as f:
+            style = f.read()
+        self.setStyleSheet(style)
         self.soldiers = []
         self.sevev = "רגיל"
         self.inactive = []
@@ -78,13 +81,31 @@ class Window(QWidget):
         self.sevev_box.currentTextChanged.connect(self.combo_box)
         self.tab1.layout.addWidget(self.sevev_box, 9, 1)
 
+        self.custom_name_label = QLabel()
+        self.custom_name_label.setText("בחר שם להכנסת משימה. השאר ריק בשביל לא להוסיף עוד משימה.")
+        self.tab1.layout.addWidget(self.custom_name_label, 10, 1)
+
+        self.custom_name = QLineEdit()
+        self.custom_name.setText("")
+        self.tab1.layout.addWidget(self.custom_name, 11, 1)
+
+        self.custom_num_label = QLabel()
+        self.custom_num_label.setText("מספר אנשים למשימה החדשה.")
+        self.tab1.layout.addWidget(self.custom_num_label, 12, 1)
+
+        self.custom_num = QLineEdit()
+        self.custom_num.setText("0")
+        self.custom_num.setValidator(QIntValidator())
+        self.tab1.layout.addWidget(self.custom_num, 13, 1)
+
 
         self.makeShavtzak = QPushButton(self)
         self.makeShavtzak.setText("Make Shavtzak")
         self.makeShavtzak.clicked.connect(lambda: self.shavtzak(int(self.amount_of_soldiers.text()),
                                     int(self.amount_of_siurim.text()), int(self.amount_of_kka.text()),
-                                    int(self.attempts.text()), self.sevev, self.inactive))
-        self.tab1.layout.addWidget(self.makeShavtzak, 10, 1)
+                                    int(self.attempts.text()), self.sevev, self.inactive, self.custom_name.text(),
+                                    int(self.custom_num.text())))
+        self.tab1.layout.addWidget(self.makeShavtzak, 14, 1)
 
 
         # Setting up tab 2 (used for the list)
@@ -133,7 +154,7 @@ class Window(QWidget):
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
 
-    def shavtzak(self, amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, inactive):
+    def shavtzak(self, amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, inactive, custom_name, custom_num):
         with open("soldiers.json", "r") as f:
             data = json.load(f)
             for i in data:
@@ -144,11 +165,17 @@ class Window(QWidget):
                         pass
         try:
             self.soldiers = computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts
-                                        , sevev, inactive)
+                                        , sevev, inactive, custom_name, custom_num)
+
             with open("shavtzak.json", "w") as f:
                 f.seek(0)
                 json.dump([self.soldiers, amountOfSoldiers, amountOfSiurim], f, indent=6)
+            if custom_name != "":
+                if custom_name not in self.shavtzak_table.keys:
+                    self.shavtzak_table.keys.append(custom_name)
             self.shavtzak_table.set_items()
+            self.shavtzak_table.resizeColumnsToContents()
+
             with open("soldiers.json", "r") as f:
                 data = json.load(f)
             self.table1.processDict(data)
@@ -159,7 +186,7 @@ class Window(QWidget):
         except IndexError as exc:
             exception = QMessageBox()
             exception.setIcon(QMessageBox.Critical)
-            exception.setText(f"אין מספיק אנשים להכין שבצק! \n Exception: IndexError {exc}")
+            exception.setText(f"התוכנה לא הצליחה להכין שבצק. \n נסו שוב ואם הבעיה ממשיכה צריך להוסיף חיילים. \n Exception: IndexError {exc}")
             exception.exec_()
 
     def combo_box(self):
@@ -184,7 +211,6 @@ class Window(QWidget):
                 self.soldierList.addItem(item1.text())
         except Exception as exc:
             print(exc)
-
 
 
 class Table(QTableWidget):
@@ -347,6 +373,8 @@ class ShavtzakTable(QTableWidget):
         self.set_items()
 
     def set_items(self):
+        self.setColumnCount(len(self.keys))
+        self.setHorizontalHeaderLabels(self.keys)
         with open("shavtzak.json", "r") as f:
             self.json_data = json.load(f)
         soldiers = self.json_data[0]
@@ -358,6 +386,14 @@ class ShavtzakTable(QTableWidget):
         self.hamal = []
         self.tapuz = []
         self.sg = []
+        self.custom = []
+        if self.mitbah or self.siur or self.hamal or self.sg or self.tapuz or self.kka:
+            exception = QMessageBox()
+            exception.setIcon(QMessageBox.Critical)
+            exception.setText(
+                "התוכנה לא הצליחה להכין שבצק. \n נסו שוב ואם הבעיה ממשיכה צריך להוסיף חיילים. \n Exception: IndexError }")
+            exception.exec_()
+            raise Exception
         for i in soldiers:
             match i[1]:
                 case "Mitbah":
@@ -373,6 +409,8 @@ class ShavtzakTable(QTableWidget):
                     self.tapuz.append(i[0])
                 case "SG":
                     self.sg.append(i[0])
+                case "Custom":
+                    self.custom.append(i[0])
                 case _:
                     print(i)
         self.mitbah = ", ".join(self.mitbah)
@@ -426,3 +464,8 @@ class ShavtzakTable(QTableWidget):
         self.kka = ", ".join(self.kka)
         for i in range(5):
             self.setItem(i, 4, QtWidgets.QTableWidgetItem(self.kka))
+
+        if len(self.keys) > 6:
+            self.custom = ", ".join(self.custom)
+            for i in range(6):
+                self.setItem(i, 6, QtWidgets.QTableWidgetItem(self.custom))
