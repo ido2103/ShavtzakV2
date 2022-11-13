@@ -422,45 +422,48 @@ class ShavtzakTable(QTableWidget):
             self.setItem(i, 1, QtWidgets.QTableWidgetItem(name))
         for i, name in enumerate(self.hamal):
             self.setItem(i, 2, QtWidgets.QTableWidgetItem(name))
-        match amount_of_soldiers:
-            case 1:
-                match amount_of_siurim:
-                    case 1:
-                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
-                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
-                    case 2:
-                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
-                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
-                        self.setItem(2, 3, QtWidgets.QTableWidgetItem(""))
-                        self.setItem(3, 3, QtWidgets.QTableWidgetItem(""))
-                        self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
-                        self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
-                    case 3:
-                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
-                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
-                        self.setItem(2, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
-                        self.setItem(3, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
-                        self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[2]))
-                        self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[2]))
-            case 2:
-                match amount_of_siurim:
-                    case 1:
-                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
-                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
-                    case 2:
-                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
-                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
-                        self.setItem(2, 3, QtWidgets.QTableWidgetItem(""))
-                        self.setItem(3, 3, QtWidgets.QTableWidgetItem(""))
-                        self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
-                        self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
-                    case 3:
-                        self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]+ ", "+ self.siur[1]))
-                        self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]+ ", "+ self.siur[1]))
-                        self.setItem(2, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
-                        self.setItem(3, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
-                        self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[4]+ ", "+ self.siur[5]))
-                        self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[4]+ ", "+ self.siur[5]))
+        try:
+            match amount_of_soldiers:
+                case 1:
+                    match amount_of_siurim:
+                        case 1:
+                            self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                            self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                        case 2:
+                            self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                            self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                            self.setItem(2, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(3, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
+                            self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
+                        case 3:
+                            self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                            self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                            self.setItem(2, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
+                            self.setItem(3, 3, QtWidgets.QTableWidgetItem(self.siur[1]))
+                            self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[2]))
+                            self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[2]))
+                case 2:
+                    match amount_of_siurim:
+                        case 1:
+                            self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
+                            self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
+                        case 2:
+                            self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
+                            self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
+                            self.setItem(2, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(3, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
+                            self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
+                        case 3:
+                            self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]+ ", "+ self.siur[1]))
+                            self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]+ ", "+ self.siur[1]))
+                            self.setItem(2, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
+                            self.setItem(3, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
+                            self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[4]+ ", "+ self.siur[5]))
+                            self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[4]+ ", "+ self.siur[5]))
+        except Exception as exc:
+            print(exc)
         self.kka = ", ".join(self.kka)
         for i in range(5):
             self.setItem(i, 4, QtWidgets.QTableWidgetItem(self.kka))
