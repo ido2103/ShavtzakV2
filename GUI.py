@@ -64,11 +64,11 @@ class Window(QWidget):
         self.tab1.layout.addWidget(self.amount_of_kka, 6, 1)
 
         self.attempts_label = QLabel()
-        self.attempts_label.setText("כמה נסיונות ליצירת שבצק? ממולץ 500-1000")
+        self.attempts_label.setText("כמה נסיונות ליצירת שבצק? ממולץ 1000-2000")
         self.tab1.layout.addWidget(self.attempts_label, 7, 1)
 
         self.attempts = QLineEdit()
-        self.attempts.setText("500")
+        self.attempts.setText("1000")
         self.attempts.setValidator(QIntValidator())
         self.tab1.layout.addWidget(self.attempts, 8, 1)
 
@@ -107,6 +107,9 @@ class Window(QWidget):
                                     int(self.custom_num.text())))
         self.tab1.layout.addWidget(self.makeShavtzak, 14, 1)
 
+        self.perfect_score_label = QLabel()
+        self.perfect_score_label.setText("ניקוד:")
+        self.tab1.layout.addWidget(self.perfect_score_label, 0, 2)
 
         # Setting up tab 2 (used for the list)
         self.tab2.layout = QVBoxLayout(self)
@@ -161,12 +164,13 @@ class Window(QWidget):
                 for n in i:
                     try:
                         i[n] = int(i[n])
-                    except ValueError as exc:
+                    except ValueError:
                         pass
+        self.perfect_score_label.setText("ניקוד:")
         try:
-            self.soldiers = computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts
+            self.soldiers, self.best = computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts
                                         , sevev, inactive, custom_name, custom_num)
-
+            self.perfect_score_label.setText(f"ניקוד: {str(self.best)}")
             with open("shavtzak.json", "w") as f:
                 f.seek(0)
                 json.dump([self.soldiers, amountOfSoldiers, amountOfSiurim], f, indent=6)
@@ -174,7 +178,6 @@ class Window(QWidget):
                 if custom_name not in self.shavtzak_table.keys:
                     self.shavtzak_table.keys.append(custom_name)
             self.shavtzak_table.set_items()
-            self.shavtzak_table.resizeColumnsToContents()
 
             with open("soldiers.json", "r") as f:
                 data = json.load(f)
@@ -183,7 +186,8 @@ class Window(QWidget):
             msg.setIcon(QMessageBox.Information)
             msg.setText("שבצק נוצר!")
             msg.exec_()
-        except IndexError as exc:
+        except Exception as exc:
+            print(exc)
             exception = QMessageBox()
             exception.setIcon(QMessageBox.Critical)
             exception.setText(f"התוכנה לא הצליחה להכין שבצק. \n נסו שוב ואם הבעיה ממשיכה צריך להוסיף חיילים. \n Exception: IndexError {exc}")
@@ -319,7 +323,6 @@ class Table(QTableWidget):
         num = QtWidgets.QInputDialog.getInt(QtWidgets.QWidget(), "Reset Column", "Which column do you want to reset?")
         if num[1]:
             if num[0] > 0:
-                print(num)
                 match num[0]:
                     case 1:
                         for i in self.data:
@@ -394,35 +397,32 @@ class ShavtzakTable(QTableWidget):
                 "התוכנה לא הצליחה להכין שבצק. \n נסו שוב ואם הבעיה ממשיכה צריך להוסיף חיילים. \n Exception: IndexError }")
             exception.exec_()
             raise Exception
-        for i in soldiers:
-            match i[1]:
-                case "Mitbah":
-                    self.mitbah.append(i[0])
-                case "Kaf Kaf A":
-                    self.kka.append(i[0])
-                case "Siur":
-                    self.siur.append(i[0])
-                case "Hamal":
-                    self.hamal.append(i[0])
-                    self.hamal.append(i[0])
-                case "Tapuz":
-                    self.tapuz.append(i[0])
-                case "SG":
-                    self.sg.append(i[0])
-                case "Custom":
-                    self.custom.append(i[0])
-                case _:
-                    print(i)
-        self.mitbah = ", ".join(self.mitbah)
-        for i in range(4):
-            self.setItem(i, 5, QtWidgets.QTableWidgetItem(self.mitbah))
-        for i, name in enumerate(self.sg):
-            self.setItem(i, 0, QtWidgets.QTableWidgetItem(name))
-        for i, name in enumerate(self.tapuz):
-            self.setItem(i, 1, QtWidgets.QTableWidgetItem(name))
-        for i, name in enumerate(self.hamal):
-            self.setItem(i, 2, QtWidgets.QTableWidgetItem(name))
         try:
+            for i in soldiers:
+                match i[1]:
+                    case "Mitbah":
+                        self.mitbah.append(i[0])
+                    case "Kaf Kaf A":
+                        self.kka.append(i[0])
+                    case "Siur":
+                        self.siur.append(i[0])
+                    case "Hamal":
+                        self.hamal.append(i[0])
+                        self.hamal.append(i[0])
+                    case "Tapuz":
+                        self.tapuz.append(i[0])
+                    case "SG":
+                        self.sg.append(i[0])
+                    case "Custom":
+                        self.custom.append(i[0])
+                    case _:
+                        print(i, "case_")
+            for i, name in enumerate(self.sg):
+                self.setItem(i, 0, QtWidgets.QTableWidgetItem(name))
+            for i, name in enumerate(self.tapuz):
+                self.setItem(i, 1, QtWidgets.QTableWidgetItem(name))
+            for i, name in enumerate(self.hamal):
+                self.setItem(i, 2, QtWidgets.QTableWidgetItem(name))
             match amount_of_soldiers:
                 case 1:
                     match amount_of_siurim:
@@ -462,13 +462,15 @@ class ShavtzakTable(QTableWidget):
                             self.setItem(3, 3, QtWidgets.QTableWidgetItem(self.siur[2]+ ", "+ self.siur[3]))
                             self.setItem(4, 3, QtWidgets.QTableWidgetItem(self.siur[4]+ ", "+ self.siur[5]))
                             self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[4]+ ", "+ self.siur[5]))
+            self.kka = ", ".join(self.kka)
+            for i in range(5):
+                self.setItem(i, 4, QtWidgets.QTableWidgetItem(self.kka))
+            self.mitbah = ", ".join(self.mitbah)
+            for i in range(4):
+                self.setItem(i, 5, QtWidgets.QTableWidgetItem(self.mitbah))
+            if len(self.keys) > 6:
+                self.custom = ", ".join(self.custom)
+                for i in range(6):
+                    self.setItem(i, 6, QtWidgets.QTableWidgetItem(self.custom))
         except Exception as exc:
-            print(exc)
-        self.kka = ", ".join(self.kka)
-        for i in range(5):
-            self.setItem(i, 4, QtWidgets.QTableWidgetItem(self.kka))
-
-        if len(self.keys) > 6:
-            self.custom = ", ".join(self.custom)
-            for i in range(6):
-                self.setItem(i, 6, QtWidgets.QTableWidgetItem(self.custom))
+            print(exc, 1)
