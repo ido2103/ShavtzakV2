@@ -1,5 +1,6 @@
 from GUI import Window
 import sys
+from funcs import computeList
 from PyQt5.QtWidgets import QApplication
 
 
@@ -9,10 +10,9 @@ def app():
     screen.show()
     sys.exit(app.exec_())
 
-
-#computeList(1, 1, 1, 500, "מפ", ['Dolev', 'Ariel Ben Hamo', 'Ido', 'Adeel', 'Lidor', 'Mark', 'Sean'], "", 0)
+# mostly used for bug testing without the GUI since the GUI doesn't show exceptions, it just crashes.
+# computeList(1, 1, 3, 1000, "רגיל", [], "", 0)
 
 
 if __name__ == '__main__':
     app()
-
