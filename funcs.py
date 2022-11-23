@@ -59,12 +59,11 @@ def doMitbah(data):
     return chosen, data
 
 
-def doShmira(data, type):
+def doShmira(data, type, highestShmira):
     """Works exactly the same as doHamal"""
     options = []
-    highestShmira = highest(data, type)
     for i in data:
-        if (i["Resting Hours:"] <= 0) and (i[type] <= highestShmira) and(i["IsPtorShmira"] == "No"):
+        if (i["Resting Hours:"] <= 0) and (i["IsPtorShmira"] == "No"):
             # this section makes it linear. the more difference there is between the current soldier and the soldier
             # with the highest mitbah value the more likely it is to pick them.
             for n in range(i[type], highestShmira+1):
@@ -352,12 +351,16 @@ def return_score(data, soldiers):
         elif all_soldiers[i] in list_hamal or all_soldiers[i] in list_siur:
             score -= 20
         else: score += 10
+    if (list_hamal[0] or list_siur[0] == [all_soldiers[5]]) or (list_hamal[0] or list_siur[0] == [all_soldiers[10]]):
+        score -= 35
+    if (list_hamal[0] or list_siur[0] == [all_soldiers[6]]) or (list_hamal[0] or list_siur[0] == [all_soldiers[11]]):
+        score -= 50
     for i in range(len(list_hamal)):
         if (i + 2 < len(list_hamal)) and (list_hamal[i] == list_hamal[i+2]):
-            score -= 35
+            score -= 50
     for i in range(len(list_siur)):
         if (i + 2 < len(list_siur)) and (list_siur[i] == list_siur[i+2]):
-            score -= 25
+            score -= 50
     for i in list_siur:
         if i in list_hamal:
             score -= 50
@@ -465,10 +468,12 @@ def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, num, custom_name,
             i["Resting Hours:"] = 16
             soldiers.append((i, "Siur"))
     # then, regardless of the num we do shmirot.
-    tapuz, data = doShmira(data, "Tapuz:")
+    highestShmira = highest(data, "Tapuz:")
+    tapuz, data = doShmira(data, "Tapuz:", highestShmira)
     tapuz["Tapuz:"] += 1
     tapuz["Resting Hours:"] = 12
-    sg, data = doShmira(data, "S.G:")
+    highestShmira = highest(data, "S.G:")
+    sg, data = doShmira(data, "S.G:", highestShmira)
     sg["S.G:"] += 1
     sg["Resting Hours:"] = 12
     soldiers.append((tapuz, "Tapuz"))
@@ -517,6 +522,4 @@ def computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, 
                 list_to_update[i] = best_data[j]
     # finally dumps the information of the people not included in the shavtzak with the ones that are. that
     # happens in order to prevent data being deleted for someone because you didn't include them.
-    with open("soldiers.json", "w") as f:
-        json.dump(list_to_update, f, indent=6)
-    return best_soldiers, best_score
+    return best_soldiers, best_score, list_to_update
