@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QIntValidator
-from PyQt5.QtCore import QSortFilterProxyModel, QAbstractTableModel
 from funcs import append_json, computeList
 import json
 
@@ -100,16 +99,17 @@ class Window(QWidget):
 
 
         self.makeShavtzak = QPushButton(self)
-        self.makeShavtzak.setText("Make Shavtzak")
+        self.makeShavtzak.setText("צור שבצק")
         self.makeShavtzak.clicked.connect(lambda: self.shavtzak(int(self.amount_of_soldiers.text()),
                                     int(self.amount_of_siurim.text()), int(self.amount_of_kka.text()),
                                     int(self.attempts.text()), self.sevev, self.inactive, self.custom_name.text(),
                                     int(self.custom_num.text())))
         self.tab1.layout.addWidget(self.makeShavtzak, 14, 1)
 
-        self.perfect_score_label = QLabel()
-        self.perfect_score_label.setText("ניקוד:")
-        self.tab1.layout.addWidget(self.perfect_score_label, 0, 2)
+        self.apply_button = QPushButton()
+        self.apply_button.setText("שמור שבצק")
+        self.apply_button.clicked.connect(self.shavtzak_table.apply_shavtzak)
+        self.tab1.layout.addWidget(self.apply_button, 15, 1)
 
         # Setting up tab 2 (used for the list)
         self.tab2.layout = QVBoxLayout(self)
@@ -118,22 +118,22 @@ class Window(QWidget):
         self.tab2.setLayout(self.tab2.layout)
 
         self.buttonAdd = QPushButton(self)
-        self.buttonAdd.setText("Add")
+        self.buttonAdd.setText("הוסף")
         self.buttonAdd.clicked.connect(self.table1.addRow)
         self.tab2.layout.addWidget(self.buttonAdd)
 
         self.buttonRemove = QPushButton(self)
-        self.buttonRemove.setText("Remove")
+        self.buttonRemove.setText("הסר")
         self.buttonRemove.clicked.connect(self.table1.removeaRow)
         self.tab2.layout.addWidget(self.buttonRemove)
 
         self.buttonSave = QPushButton(self)
-        self.buttonSave.setText("Save")
+        self.buttonSave.setText("שמור")
         self.buttonSave.clicked.connect(self.table1.updateJson)
         self.tab2.layout.addWidget(self.buttonSave)
 
         self.buttonResetClmn = QPushButton(self)
-        self.buttonResetClmn.setText("Reset Column")
+        self.buttonResetClmn.setText("אפס רשומה")
         self.buttonResetClmn.clicked.connect(self.table1.removeclmn)
         self.tab2.layout.addWidget(self.buttonResetClmn)
 
@@ -166,22 +166,28 @@ class Window(QWidget):
                         i[n] = int(i[n])
                     except ValueError:
                         pass
-        self.perfect_score_label.setText("ניקוד:")
         try:
-            self.soldiers, self.best = computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts
+            self.soldiers, self.best, self.shavtzak_soldiers = computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts
                                         , sevev, inactive, custom_name, custom_num)
-            self.perfect_score_label.setText(f"ניקוד: {str(self.best)}")
-            with open("shavtzak.json", "w") as f:
-                f.seek(0)
-                json.dump([self.soldiers, amountOfSoldiers, amountOfSiurim], f, indent=6)
             if custom_name != "":
                 if custom_name not in self.shavtzak_table.keys:
                     self.shavtzak_table.keys.append(custom_name)
-            self.shavtzak_table.set_items()
-
-            with open("soldiers.json", "r") as f:
-                data = json.load(f)
-            self.table1.processDict(data)
+            self.shavtzak_table.set_items(self.soldiers, amountOfSoldiers, amountOfSiurim)
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Question)
+            msg.setText("האם אתה מרוצה מהשבצק שנוצר?")
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            msg.exec_()
+            if msg.standardButton(msg.clickedButton()) == QMessageBox.Yes:
+                print("Yes")
+                with open("soldiers.json", "w") as f:
+                    json.dump(self.shavtzak_soldiers, f, indent=6)
+                with open("shavtzak.json", "w") as f:
+                    f.seek(0)
+                    json.dump([self.soldiers, amountOfSoldiers, amountOfSiurim], f, indent=6)
+            else:
+                return
+            self.table1.processDict(self.shavtzak_soldiers)
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)
             msg.setText("שבצק נוצר!")
@@ -273,6 +279,10 @@ class Table(QTableWidget):
             json.dump(list, f, indent=6)
         self.data = list
         print("updated json!")
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("נשמר")
+        msg.exec_()
 
     def addRow(self):
         # this function adds a new row to be edited from a template.
@@ -373,16 +383,141 @@ class ShavtzakTable(QTableWidget):
         self.setHorizontalHeaderLabels(self.keys)
         self.setVerticalHeaderLabels(self.hours)
         #self.setMaximumSize(677, 205)
-        self.set_items()
-
-    def set_items(self):
-        self.setColumnCount(len(self.keys))
-        self.setHorizontalHeaderLabels(self.keys)
         with open("shavtzak.json", "r") as f:
             self.json_data = json.load(f)
-        soldiers = self.json_data[0]
-        amount_of_soldiers = self.json_data[1]
-        amount_of_siurim = self.json_data[2]
+        self.set_items(self.json_data[0], self.json_data[1], self.json_data[2])
+
+    def apply_shavtzak(self):
+        try:
+            with open("shavtzak.json", "r") as f:
+                data = json.load(f)
+                amount_of_siurim = data[2]
+            soldiers = [[],[],[],[],[],[]]
+            for i in range(self.columnCount()):
+                for j in range(self.rowCount()):
+                    try:
+                        soldiers[i].append(self.item(j, i).text())
+                    except Exception:
+                        pass
+            mitbah = [soldiers[5][0]]
+            kka = [soldiers[4][0]]
+            siur = [i for num, i in enumerate(soldiers[3]) if num % 2 == 0] # this worked 1st try
+            for i in siur:
+                if i == "": siur.remove(i)
+            hamal = [i for num, i in enumerate(soldiers[2]) if num % 2 == 0]
+            tapuz = soldiers[1]
+            sg = soldiers[0]
+            template = []
+            mitbah = mitbah[0].split(", ")
+            kka = kka[0].split(", ")
+            tempsiur = []
+            for i in range(len(siur)):
+                tempsiur += siur[i].split(", ")
+            siur = tempsiur
+            for i in mitbah:
+                template.append([i, "Mitbah"])
+            for i in kka:
+                template.append([i, "Kaf Kaf A"])
+            for i in siur:
+                template.append([i, "Siur"])
+            for i in hamal:
+                template.append([i, "Hamal"])
+            for i in tapuz:
+                template.append([i, "Tapuz"])
+            for i in sg:
+                template.append([i, "SG"])
+            final_template = []
+            final_template.append(template[0])
+            final_template.append(template[1])
+            template.remove(template[0])
+            template.remove(template[0])
+            list_kka = []
+            list_siur = []
+            list_hamal = []
+            list_sg = []
+            list_tapuz = []
+            for i in template:
+                if i[1] == "Kaf Kaf A":
+                    list_kka.append(i)
+                elif i[1] == "Siur":
+                    list_siur.append(i)
+                elif i[1] == "Hamal":
+                    for j in range(2):
+                        list_hamal.append(i)
+                elif i[1] == "SG":
+                    list_sg.append(i)
+                elif i[1] == "Tapuz":
+                    list_tapuz.append(i)
+
+            for i in list_siur:
+                template.remove(i)
+                if i[0] == "":
+                    list_siur.remove(i)
+            for i in list_kka:
+                final_template.append(i)
+                template.remove(i)
+            match amount_of_siurim:
+                case 0:
+                    for i in range(6):
+                        if i % 2 == 0:
+                            final_template.append(list_hamal[i])
+                        final_template.append(list_tapuz[i])
+                        final_template.append(list_sg[i])
+                case 1:
+                    for i in range(6):
+                        if i % 2 == 0:
+                            final_template.append(list_hamal[i])
+                        if i == 0:
+                            for s in list_siur:
+                                final_template.append(s)
+                        final_template.append(list_tapuz[i])
+                        final_template.append(list_sg[i])
+                case 2:
+                    for i in range(6):
+                        if i % 2 == 0:
+                            final_template.append(list_hamal[i])
+                        if i == 0 or i == 2:
+                            if len(list_siur) == 2:
+                                if i == 0:
+                                    final_template.append(list_siur[0])
+                                elif i == 2:
+                                    final_template.append(list_siur[1])
+                            elif len(list_siur) == 4:
+                                if i == 0:
+                                    final_template.append(list_siur[0])
+                                    final_template.append(list_siur[1])
+                                elif i == 2:
+                                    final_template.append(list_siur[2])
+                                    final_template.append(list_siur[3])
+                        final_template.append(list_tapuz[i])
+                        final_template.append(list_sg[i])
+                case 3:
+                    for i in range(6):
+                        if i % 2 == 0:
+                            final_template.append(list_hamal[i])
+                            if len(list_siur) == 3:
+                                if i > 0:
+                                    final_template.append(list_siur[int(i/2)])
+                                elif i == 0:
+                                    final_template.append(list_siur[0])
+                            elif len(list_siur) == 6:
+                                final_template.append(list_siur[i])
+                                final_template.append(list_siur[i+1])
+                        final_template.append(list_tapuz[i])
+                        final_template.append(list_sg[i])
+
+            with open("shavtzak.json", "r+") as f:
+                data = json.load(f)
+                data[0] = final_template
+                f.seek(0)
+                json.dump(data, f, indent=6)
+            print("json updated.")
+        except Exception as exc:
+            print(exc)
+
+    def set_items(self, soldiers, amount_of_soldiers, amount_of_siurim):
+        self.setColumnCount(len(self.keys))
+        self.setHorizontalHeaderLabels(self.keys)
         self.mitbah = []
         self.kka = []
         self.siur = []
@@ -426,9 +561,20 @@ class ShavtzakTable(QTableWidget):
             match amount_of_soldiers:
                 case 1:
                     match amount_of_siurim:
+                        case 0:
+                            self.setItem(0, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(1, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(2, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(3, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(4, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(5, 3, QtWidgets.QTableWidgetItem(""))
                         case 1:
                             self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
                             self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
+                            self.setItem(2, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(3, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(4, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(5, 3, QtWidgets.QTableWidgetItem(""))
                         case 2:
                             self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
                             self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0]))
@@ -445,9 +591,20 @@ class ShavtzakTable(QTableWidget):
                             self.setItem(5, 3, QtWidgets.QTableWidgetItem(self.siur[2]))
                 case 2:
                     match amount_of_siurim:
+                        case 0:
+                            self.setItem(0, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(1, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(2, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(3, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(4, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(5, 3, QtWidgets.QTableWidgetItem(""))
                         case 1:
                             self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
                             self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
+                            self.setItem(2, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(3, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(4, 3, QtWidgets.QTableWidgetItem(""))
+                            self.setItem(5, 3, QtWidgets.QTableWidgetItem(""))
                         case 2:
                             self.setItem(0, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
                             self.setItem(1, 3, QtWidgets.QTableWidgetItem(self.siur[0] + ", " + self.siur[1]))
