@@ -23,9 +23,9 @@ class Window(QWidget):
         self.tab3 = QWidget()
         self.tabs.resize(1, 1)
 
-        self.tabs.addTab(self.tab1, "Main")
-        self.tabs.addTab(self.tab2, "Soldiers")
-        self.tabs.addTab(self.tab3, "Remove Soldiers")
+        self.tabs.addTab(self.tab1, "שבצק")
+        self.tabs.addTab(self.tab2, "רשומות חיילים")
+        self.tabs.addTab(self.tab3, "הסרת חיילים")
         # setting up tab 1 (used for general control)
         self.tab1.layout = QGridLayout(self)
         self.tab1.setLayout(self.tab1.layout)
@@ -511,7 +511,10 @@ class ShavtzakTable(QTableWidget):
                 data[0] = final_template
                 f.seek(0)
                 json.dump(data, f, indent=6)
-            print("json updated.")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("שבצק נשמר!")
+            msg.exec_()
         except Exception as exc:
             print(exc)
 
