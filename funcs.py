@@ -59,6 +59,21 @@ def doMitbah(data):
     return chosen, data
 
 
+def do_random_mitbah(data):
+    # selects 2 soldiers to go to the kitchen.
+    chosen = []
+    options = []
+    # adding only people who can go to the kitchen
+    for i in data:
+        if (i["Resting Hours:"] <= 0) and (i["Mitbah Cooldown:"] <= 0) and (i["IsPtorMitbah"] == "No"):
+            options.append(i)
+    # select 2 random soldiers out of the list
+    while len(chosen) < 2:
+        a = random.choice(options)
+        if a not in chosen: chosen.append(a)
+    return chosen, data
+
+
 def doShmira(data, type, highestShmira):
     """Works exactly the same as doHamal"""
     options = []
@@ -68,6 +83,15 @@ def doShmira(data, type, highestShmira):
             # with the highest mitbah value the more likely it is to pick them.
             for n in range(i[type], highestShmira+1):
                 options.append(i)
+    return random.choice(options), data
+
+
+def do_random_shmira(data, type, highestShmira):
+    """Works exactly the same as random_do_hamal"""
+    options = []
+    for i in data:
+        if i["IsPtorShmira"] == "No":
+            options.append(i)
     return random.choice(options), data
 
 
@@ -85,6 +109,35 @@ def doHamal(data):
     for i in data:
         if (i["Resting Hours:"] <= 0) and (i["Hamal:"] <= highestHamal) and (i["IsHamal"] == "Yes"):
             for n in range(i["Hamal:"], highestHamal+1):
+                options.append(i)
+    try:
+        a = random.choice(options)
+    except Exception:
+        return {
+            "Name:": "ERROR",
+            "S.G:": 10,
+            "Tapuz:": 18,
+            "Hamal:": 0,
+            "Siur:": 0,
+            "Mitbah:": 7,
+            "Kaf Kaf A:": 0,
+            "Resting Hours:": 8,
+            "Mitbah Cooldown:": 0,
+            "IsHamal": "No",
+            "IsPtorMitbah": "No",
+            "IsPtorShmira": "No",
+            "Sevev": "MP",
+            "Division": 999
+      }, data
+    return a, data
+
+
+def do_random_hamal(data):
+    """Works the same as the normal doHamal func except it's true random and not
+    psudo random."""
+    options = []
+    for i in data:
+        if (i["Resting Hours:"] <= 0) and (i["IsHamal"] == "Yes"):
                 options.append(i)
     try:
         a = random.choice(options)
@@ -214,6 +267,91 @@ def doSiur(data, amountOfSoldiers):
     return a, data
 
 
+def do_random_siur(data, amountOfSoldiers):
+    """This function works the same as the do siur function, but it adds soldiers 1 at a time and not based
+     on their past siurim."""
+    divisions = seperate_to_divisions(data)
+    div1, div2, div3, div4 = [], [], [], []
+    # separating everyone into their divisions
+    for i in data:
+        match i["Division"]:
+            case 1:
+                if i["Resting Hours:"] <= 0:
+                    div1.append(i)
+                pass
+            case 2:
+                if i["Resting Hours:"] <= 0:
+                    div2.append(i)
+                pass
+            case 3:
+                if i["Resting Hours:"] <= 0:
+                    div3.append(i)
+                pass
+            case 4:
+                if i["Resting Hours:"] <= 0:
+                    div4.append(i)
+                pass
+            case _:
+                pass
+    match amountOfSoldiers:
+        # setting up the soldiers to the same amount it was set to
+        case 1:
+            if div1: div1 = random.choice(div1)
+            if div2: div2 = random.choice(div2)
+            if div3: div3 = random.choice(div3)
+            if div4: div4 = random.choice(div4)
+
+        case 2:
+            if div1:
+                temp = [random.choice(div1)]
+                count = 0
+                while len(temp) < amountOfSoldiers and count < 20:
+                    a = random.choice(div1)
+                    if a not in temp: temp.append(a)
+                    count += 1
+                div1 = temp
+
+            if div2:
+                temp = [random.choice(div2)]
+                count = 0
+                while len(temp) < amountOfSoldiers and count < 20:
+                    a = random.choice(div2)
+                    if a not in temp: temp.append(a)
+                    count += 1
+                div2 = temp
+            if div3:
+                temp = [random.choice(div3)]
+                count = 0
+                while len(temp) < amountOfSoldiers and count < 20:
+                    a = random.choice(div3)
+                    if a not in temp: temp.append(a)
+                    count += 1
+                div3 = temp
+            if div4:
+                temp = [random.choice(div4)]
+                count = 0
+                while len(temp) < amountOfSoldiers and count < 20:
+                    a = random.choice(div4)
+                    if a not in temp: temp.append(a)
+                    count += 1
+                div4 = temp
+        case _:
+            raise ValueError
+    soldiers = []
+    soldiers.append(div1)
+    soldiers.append(div2)
+    soldiers.append(div3)
+    soldiers.append(div4)
+    for j in soldiers:
+        for i in soldiers:
+            if not i:
+                soldiers.remove(i)
+    a = random.choice(soldiers)
+    if amountOfSoldiers == 1:
+        return [a], data
+    return a, data
+
+
 def KafKafA(data, amountOfKKA):
     """This function decides which people get selected to be KKA based on their amount of kka recorded.
     This function is a bit more complicated (like the siur function) because it's essential that kka
@@ -256,6 +394,71 @@ def KafKafA(data, amountOfKKA):
                 if i["Kaf Kaf A:"] <= highest4 and i["Resting Hours:"] <= 0:
                     for j in range(i["Kaf Kaf A:"], highest4 + 1):
                         div4.append(i)
+            case _:
+                pass
+    if div1:
+        temp = [random.choice(div1)]
+        count = 0
+        while len(temp) < amountOfKKA and count <= 20:
+            a = random.choice(div1)
+            if a not in temp: temp.append(a)
+            count += 1
+        div1 = temp
+    if div2:
+        temp = [random.choice(div2)]
+        count = 0
+        while len(temp) < amountOfKKA and count <= 20:
+            a = random.choice(div2)
+            if a not in temp: temp.append(a)
+            count += 1
+        div2 = temp
+    if div3:
+        temp = [random.choice(div3)]
+        count = 0
+        while len(temp) < amountOfKKA and count <= 20:
+            a = random.choice(div3)
+            if a not in temp: temp.append(a)
+            count += 1
+        div3 = temp
+    if div4:
+        temp = [random.choice(div4)]
+        count = 0
+        while len(temp) < amountOfKKA and count <= 20:
+            a = random.choice(div4)
+            if a not in temp: temp.append(a)
+            count += 1
+        div4 = temp
+    soldiers = [div1, div2, div3, div4]
+    for l in range(len(soldiers)):
+        for i in soldiers:
+            if len(i) < amountOfKKA:
+                soldiers.remove(i)
+    r = random.choice(soldiers)
+    return r, data
+
+
+def do_random_kafkafa(data, amountOfKKA):
+    """This function decides which people get selected to be KKA randomly.
+    This function is a bit more complicated (like the siur function) because it's essential that kka
+    will be organic and thus only people from the same division get placed together."""
+    divisions = seperate_to_divisions(data)
+    div1, div2, div3, div4 = [], [], [], []
+    if amountOfKKA == 1:
+        return [random.choice(data)], data
+    for i in data:
+        match i["Division"]:
+            case 1:
+                if i["Resting Hours:"] <= 0:
+                    div1.append(i)
+            case 2:
+                if i["Resting Hours:"] <= 0:
+                    div2.append(i)
+            case 3:
+                if i["Resting Hours:"] <= 0:
+                    div3.append(i)
+            case 4:
+                if i["Resting Hours:"] <= 0:
+                    div4.append(i)
             case _:
                 pass
     if div1:
@@ -427,6 +630,63 @@ def custom_mission(data, amount_of_people):
     return data, chosen_soldiers
 
 
+def do_random_cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, num, custom_name, custom_num):
+    """This function works the same as the normal cycle function except it uses the completely random functons.
+    This is because the functions may be redundant and this will immensly improve performance."""
+    soldiers = []
+    # firstly we add all the stuff that are 1 time only such as mitbah, kka, and any custom missions.
+    if num == 1:
+        for i in data:
+            if i["Mitbah Cooldown:"] > 0:
+                i["Mitbah Cooldown:"] -= 1
+        mitbah, data = do_random_mitbah(data)
+        for i in mitbah:
+            i["Mitbah:"] += 1
+            i["Mitbah Cooldown:"] = 2
+            i["Resting Hours:"] = 24
+            soldiers.append((i, "Mitbah"))
+        kafkafa, data = do_random_kafkafa(data, amountOfKKA)
+        for i in kafkafa:
+            i["Kaf Kaf A:"] += 1
+            i["Resting Hours:"] = 28
+            soldiers.append((i, "Kaf Kaf A"))
+        if custom_name != "":
+            data, custom_soldiers = custom_mission(data, custom_num)
+            for i in custom_soldiers:
+                i["Resting Hours:"] = 24
+                soldiers.append((i, "Custom"))
+    # then, all the things that happend every other iteration (that take 8 hours) such as hamal, siur.
+    if num % 2 == 1:
+        hamal, data = do_random_hamal(data)
+        hamal["Hamal:"] += 1
+        hamal["Resting Hours:"] = 16
+        soldiers.append((hamal, "Hamal"))
+    # siur is a bit more odd since there might be a need for only 1/2/3 siurim but hamal always has 3.
+    if num == 1 or (num == 3 and amountOfSiurim > 1) or (num == 5 and amountOfSiurim > 2):
+        siur, data = do_random_siur(data, amountOfSoldiers)
+        for i in siur:
+            i["Siur:"] += 1
+            i["Resting Hours:"] = 16
+            soldiers.append((i, "Siur"))
+    # then, regardless of the num we do shmirot.
+    highestShmira = highest(data, "Tapuz:")
+    tapuz, data = do_random_shmira(data, "Tapuz:", highestShmira)
+    tapuz["Tapuz:"] += 1
+    tapuz["Resting Hours:"] = 12
+    highestShmira = highest(data, "S.G:")
+    sg, data = do_random_shmira(data, "S.G:", highestShmira)
+    sg["S.G:"] += 1
+    sg["Resting Hours:"] = 12
+    soldiers.append((tapuz, "Tapuz"))
+    soldiers.append((sg, "SG"))
+    # after everyone has their new role for this cycle we remove 4 hours from everyone. this is
+    # done to stimulate time passing.
+    for i in data:
+        if i["Resting Hours:"] > 0:
+            i["Resting Hours:"] -= 4
+    return soldiers, data
+
+
 def cycle(data, amountOfSoldiers, amountOfSiurim, amountOfKKA, num, custom_name, custom_num):
     """This function is the core of the program. this function gets called 6 times.
     each time it is being called it operates differently based on the num value.
@@ -500,7 +760,7 @@ def computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, 
             data_to_iter = json.load(f)
         soldiers = []
         for i in range(1, 7):
-            temp, data_to_iter = cycle(data_to_iter, amountOfSoldiers, amountOfSiurim, amountOfKKA, i,
+            temp, data_to_iter = do_random_cycle(data_to_iter, amountOfSoldiers, amountOfSiurim, amountOfKKA, i,
                                             custom_name, custom_num)
             for key in temp:
                 soldiers.append((key[0]["Name:"], key[1]))
@@ -511,6 +771,8 @@ def computeList(amountOfSoldiers, amountOfSiurim, amountOfKKA, attempts, sevev, 
             best_data = copy.deepcopy(data_to_iter)
         if j % 100 == 0: print(j)
     # replace the values of the soldiers in soldiers.json with the ones we just iterated through
+    print(best_data)
+    print(best_soldiers)
     with open("soldiers.json", "r") as f:
         all_data = json.load(f)
     list_to_update = []
